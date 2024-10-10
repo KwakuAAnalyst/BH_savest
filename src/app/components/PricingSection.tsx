@@ -56,7 +56,7 @@ export default function PricingSection() {
           </p>
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-muted-foreground">
-          Whether you're just starting out or scaling up, we have a plan that's right for you. All plans include a 14-day free trial.
+          Whether you&#39;re just starting out or scaling up, we have a plan that&#39;s right for you. All plans include a 14-day free trial.
         </p>
         <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {tiers.map((tier) => (
