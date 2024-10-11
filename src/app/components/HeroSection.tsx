@@ -10,8 +10,7 @@ export default function HeroSection() {
             Save. Invest. Prosper.
           </h1>
           <p className="mt-4 max-w-xl text-xl text-primary-foreground/80">
-            Discover the power of our innovative solutions. Streamline your workflow and boost productivity like never before.
-          </p>
+          Invest spare change, invest while you save,<br></br> earn bonus investments, and more.          </p>
           <div className="mt-8">
             <Link
               href="/get-started"

@@ -56,7 +56,7 @@ export default function Footer() {
         </div>
 
         {/* Copyright */}
-        <div className="border-t border-border/40 py-4 text-center">
+        <div className="border-t border-border/40 py-4 flex justify-center items-center">
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} BlockHolder. All rights reserved.
           </p>
