@@ -8,7 +8,11 @@ import { Progress } from "@/app/components/ui/progress";
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import { useUser, SignInButton } from '@clerk/nextjs';
-import { CreditCard, Calendar, AlertCircle, Download, Gift, Users, Check } from 'lucide-react';
+import { CreditCard, Calendar, AlertCircle, Download, Gift, Users, Check, Copy, Share2, Twitter, Facebook, Linkedin } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
+import { Input } from "@/app/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
+import { Label } from "@/app/components/ui/label";
 
 const planData = [
   {
@@ -85,6 +89,39 @@ const faqData = [
 
 export default function PricingPage() {
   const { isSignedIn, user } = useUser();
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
+  const [newPaymentMethod, setNewPaymentMethod] = useState('credit_card');
+
+  const referralLink = `https://blockholder.com/?ref=${user?.id}`;
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(referralLink);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const handleShare = (platform: string) => {
+    let shareUrl = '';
+    const message = 'Check out BlockHolder - the ultimate platform for managing your crypto assets!';
+
+    switch (platform) {
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`;
+        break;
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}`;
+        break;
+      case 'linkedin':
+        shareUrl = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(referralLink)}&title=${encodeURIComponent(message)}`;
+        break;
+    }
+
+    if (shareUrl) {
+      window.open(shareUrl, '_blank');
+    }
+  };
 
   // Mock data for the billing dashboard
   const billingData = {
@@ -113,6 +150,13 @@ export default function PricingPage() {
       { date: "2023-04-15", amount: 29.99, method: "Credit Card (*1234)" },
     ],
     referrals: { count: 3, earnings: 45 },
+  };
+
+  const handleAddPaymentMethod = () => {
+    // Here you would typically integrate with a payment processor
+    // For now, we'll just close the modal
+    setIsAddPaymentOpen(false);
+    // You might want to update the billingData state here to reflect the new payment method
   };
 
   return (
@@ -201,7 +245,47 @@ export default function PricingPage() {
                   ))}
                 </CardContent>
                 <CardFooter>
-                  <Button className="w-full">Add Payment Method</Button>
+                  <Dialog open={isAddPaymentOpen} onOpenChange={setIsAddPaymentOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full">Add Payment Method</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Add New Payment Method</DialogTitle>
+                        <DialogDescription>
+                          Choose a new payment method to add to your account.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <RadioGroup value={newPaymentMethod} onValueChange={setNewPaymentMethod}>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="credit_card" id="credit_card" />
+                            <Label htmlFor="credit_card">Credit Card</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="paypal" id="paypal" />
+                            <Label htmlFor="paypal">PayPal</Label>
+                          </div>
+                        </RadioGroup>
+                        {newPaymentMethod === 'credit_card' && (
+                          <div className="grid grid-cols-2 gap-4">
+                            <Input placeholder="Card Number" />
+                            <Input placeholder="MM/YY" />
+                            <Input placeholder="CVC" />
+                            <Input placeholder="Cardholder Name" />
+                          </div>
+                        )}
+                        {newPaymentMethod === 'paypal' && (
+                          <Button onClick={() => window.open('https://www.paypal.com', '_blank')}>
+                            Connect PayPal Account
+                          </Button>
+                        )}
+                      </div>
+                      <DialogFooter>
+                        <Button onClick={handleAddPaymentMethod}>Add Payment Method</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </CardFooter>
               </Card>
 
@@ -235,7 +319,44 @@ export default function PricingPage() {
                   <p>Earnings: ${billingData.referrals.earnings}</p>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="outline" className="w-full">Share Referral Link</Button>
+                  <Dialog open={isReferralModalOpen} onOpenChange={setIsReferralModalOpen}>
+                    <DialogTrigger asChild>
+                      <Button>Share Referral Link</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Share Your Referral Link</DialogTitle>
+                        <DialogDescription>
+                          Copy your unique referral link or share it directly on social media.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="flex items-center gap-2">
+                          <Input value={referralLink} readOnly />
+                          <Button onClick={handleCopyLink} size="icon">
+                            {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <div className="flex justify-center gap-4">
+                          <Button onClick={() => handleShare('twitter')} variant="outline" className="flex items-center gap-2">
+                            <Twitter className="h-4 w-4" />
+                            Twitter
+                          </Button>
+                          <Button onClick={() => handleShare('facebook')} variant="outline" className="flex items-center gap-2">
+                            <Facebook className="h-4 w-4" />
+                            Facebook
+                          </Button>
+                          <Button onClick={() => handleShare('linkedin')} variant="outline" className="flex items-center gap-2">
+                            <Linkedin className="h-4 w-4" />
+                            LinkedIn
+                          </Button>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button onClick={() => setIsReferralModalOpen(false)}>Close</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </CardFooter>
               </Card>
             </div>

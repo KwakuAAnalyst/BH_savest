@@ -22,6 +22,8 @@ export default function SavePage() {
   const [newGoal, setNewGoal] = useState({ name: '', target: '' });
   const [depositAmount, setDepositAmount] = useState('');
   const [isTransactionHistoryExpanded, setIsTransactionHistoryExpanded] = useState(false);
+  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
 
   // Mock data for the dashboard
   const [savingsData, setSavingsData] = useState({
@@ -73,6 +75,22 @@ export default function SavePage() {
       }));
       setDepositAmount('');
       setIsDepositOpen(false);
+    }
+  };
+
+  const handleWithdraw = () => {
+    const amount = parseFloat(withdrawAmount);
+    if (!isNaN(amount) && amount > 0 && amount <= savingsData.balance) {
+      setSavingsData(prevData => ({
+        ...prevData,
+        balance: prevData.balance - amount,
+        transactions: [
+          { type: "Withdrawal", amount: amount, date: new Date().toISOString().split('T')[0], from: "9876...5432", to: "Web3 Wallet" },
+          ...prevData.transactions
+        ]
+      }));
+      setWithdrawAmount('');
+      setIsWithdrawOpen(false);
     }
   };
 
@@ -128,7 +146,36 @@ export default function SavePage() {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
-                  <Button variant="outline"><ArrowDownLeft className="mr-2" /> Withdraw</Button>
+                  <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline"><ArrowDownLeft className="mr-2" /> Withdraw</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Withdraw Funds</DialogTitle>
+                        <DialogDescription>
+                          Enter the amount you want to withdraw and confirm the transaction.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="withdraw-amount" className="text-right">
+                            Amount
+                          </Label>
+                          <Input
+                            id="withdraw-amount"
+                            type="number"
+                            value={withdrawAmount}
+                            onChange={(e) => setWithdrawAmount(e.target.value)}
+                            className="col-span-3"
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button onClick={handleWithdraw}>Confirm Withdrawal</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </CardFooter>
               </Card>
 

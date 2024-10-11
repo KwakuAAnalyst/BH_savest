@@ -19,6 +19,8 @@ export default function InvestPage() {
   const [isInsightsExpanded, setIsInsightsExpanded] = useState(false);
   const [isInvestOpen, setIsInvestOpen] = useState(false);
   const [investAmount, setInvestAmount] = useState('');
+  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
 
   // Mock data for the dashboard
   const [investmentData, setInvestmentData] = useState({
@@ -88,6 +90,22 @@ export default function InvestPage() {
     }
   };
 
+  const handleWithdraw = () => {
+    const amount = parseFloat(withdrawAmount);
+    if (!isNaN(amount) && amount > 0 && amount <= investmentData.totalValue) {
+      setInvestmentData(prevData => ({
+        ...prevData,
+        totalValue: prevData.totalValue - amount,
+        transactions: [
+          { type: "Withdrawal", amount: amount, date: new Date().toISOString().split('T')[0], from: "Investment Account", to: "Web3 Wallet" },
+          ...prevData.transactions
+        ]
+      }));
+      setWithdrawAmount('');
+      setIsWithdrawOpen(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
@@ -141,7 +159,36 @@ export default function InvestPage() {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
-                  <Button variant="outline"><ArrowDownLeft className="mr-2" /> Withdraw</Button>
+                  <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline"><ArrowDownLeft className="mr-2" /> Withdraw</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Withdraw Funds</DialogTitle>
+                        <DialogDescription>
+                          Enter the amount you want to withdraw from your investment account.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="withdraw-amount" className="text-right">
+                            Amount
+                          </Label>
+                          <Input
+                            id="withdraw-amount"
+                            type="number"
+                            value={withdrawAmount}
+                            onChange={(e) => setWithdrawAmount(e.target.value)}
+                            className="col-span-3"
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button onClick={handleWithdraw}>Confirm Withdrawal</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </CardFooter>
               </Card>
 

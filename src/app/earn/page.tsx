@@ -13,12 +13,18 @@ import Footer from '@/app/components/Footer';
 import { useUser, SignInButton } from '@clerk/nextjs';
 import { PieChart, Wallet, Vote, Zap, BarChart2, RefreshCw, TrendingUp, ArrowUpRight, ArrowDownLeft, History, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import Image from 'next/image';
+import { ScrollArea } from "@/app/components/ui/scroll-area";
 
 export default function EarnPage() {
   const { isSignedIn, user } = useUser();
   const [isStakeOpen, setIsStakeOpen] = useState(false);
   const [stakeAmount, setStakeAmount] = useState('');
   const [isTransactionHistoryExpanded, setIsTransactionHistoryExpanded] = useState(false);
+  const [isUnstakeOpen, setIsUnstakeOpen] = useState(false);
+  const [unstakeAmount, setUnstakeAmount] = useState('');
+  const [isClaimRewardsOpen, setIsClaimRewardsOpen] = useState(false);
+  const [claimAmount, setClaimAmount] = useState('');
+  const [isProposalsOpen, setIsProposalsOpen] = useState(false);
 
   // Mock data for the dashboard
   const [earningData, setEarningData] = useState({
@@ -46,6 +52,13 @@ export default function EarnPage() {
     ],
   });
 
+  const [proposals, setProposals] = useState([
+    { id: 1, title: "Increase staking rewards by 2%", votes: 1500, hasVoted: false },
+    { id: 2, title: "Add new 60-day lock staking option", votes: 1200, hasVoted: false },
+    { id: 3, title: "Implement cross-chain staking", votes: 980, hasVoted: false },
+    { id: 4, title: "Reduce unstaking period to 24 hours", votes: 2100, hasVoted: false },
+  ]);
+
   const handleStake = () => {
     const amount = parseFloat(stakeAmount);
     if (!isNaN(amount) && amount > 0) {
@@ -62,8 +75,50 @@ export default function EarnPage() {
     }
   };
 
+  const handleUnstake = () => {
+    const amount = parseFloat(unstakeAmount);
+    if (!isNaN(amount) && amount > 0 && amount <= earningData.totalStaked) {
+      setEarningData(prevData => ({
+        ...prevData,
+        totalStaked: prevData.totalStaked - amount,
+        transactions: [
+          { type: "Unstake", amount: amount, date: new Date().toISOString().split('T')[0], asset: "Selected Asset" },
+          ...prevData.transactions
+        ]
+      }));
+      setUnstakeAmount('');
+      setIsUnstakeOpen(false);
+    }
+  };
+
+  const handleClaimRewards = () => {
+    const amount = parseFloat(claimAmount);
+    if (!isNaN(amount) && amount > 0 && amount <= earningData.accumulatedRewards) {
+      setEarningData(prevData => ({
+        ...prevData,
+        accumulatedRewards: prevData.accumulatedRewards - amount,
+        transactions: [
+          { type: "Reward Claim", amount: amount, date: new Date().toISOString().split('T')[0], pool: "All Pools" },
+          ...prevData.transactions
+        ]
+      }));
+      setClaimAmount('');
+      setIsClaimRewardsOpen(false);
+    }
+  };
+
   const toggleTransactionHistory = () => {
     setIsTransactionHistoryExpanded(!isTransactionHistoryExpanded);
+  };
+
+  const handleVote = (proposalId: number) => {
+    setProposals(prevProposals =>
+      prevProposals.map(proposal =>
+        proposal.id === proposalId
+          ? { ...proposal, votes: proposal.votes + 1, hasVoted: true }
+          : proposal
+      )
+    );
   };
 
   return (
@@ -119,7 +174,36 @@ export default function EarnPage() {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
-                  <Button variant="outline"><ArrowDownLeft className="mr-2" /> Unstake</Button>
+                  <Dialog open={isUnstakeOpen} onOpenChange={setIsUnstakeOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline"><ArrowDownLeft className="mr-2" /> Unstake</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Unstake Assets</DialogTitle>
+                        <DialogDescription>
+                          Enter the amount you want to unstake from your earning account.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="unstake-amount" className="text-right">
+                            Amount
+                          </Label>
+                          <Input
+                            id="unstake-amount"
+                            type="number"
+                            value={unstakeAmount}
+                            onChange={(e) => setUnstakeAmount(e.target.value)}
+                            className="col-span-3"
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button onClick={handleUnstake}>Confirm Unstake</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </CardFooter>
               </Card>
 
@@ -134,7 +218,36 @@ export default function EarnPage() {
                   <p className="text-lg">Next Payout: {earningData.nextPayout}</p>
                 </CardContent>
                 <CardFooter>
-                  <Button className="w-full"><Zap className="mr-2" /> Claim Rewards</Button>
+                  <Dialog open={isClaimRewardsOpen} onOpenChange={setIsClaimRewardsOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full"><Zap className="mr-2" /> Claim Rewards</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Claim Rewards</DialogTitle>
+                        <DialogDescription>
+                          Enter the amount of rewards you want to claim.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="claim-amount" className="text-right">
+                            Amount
+                          </Label>
+                          <Input
+                            id="claim-amount"
+                            type="number"
+                            value={claimAmount}
+                            onChange={(e) => setClaimAmount(e.target.value)}
+                            className="col-span-3"
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button onClick={handleClaimRewards}>Confirm Claim</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </CardFooter>
               </Card>
 
@@ -147,10 +260,41 @@ export default function EarnPage() {
                 <CardContent>
                   <p className="font-semibold">Governance Tokens: {earningData.governanceTokens}</p>
                   <p>Voting Power: {earningData.votingPower}</p>
-                  <p>Active Proposals: {earningData.activeProposals}</p>
+                  <p>Active Proposals: {proposals.length}</p>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="outline" className="w-full">View Proposals</Button>
+                  <Dialog open={isProposalsOpen} onOpenChange={setIsProposalsOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="w-full">View Proposals</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Active Proposals</DialogTitle>
+                        <DialogDescription>
+                          Review and vote on active governance proposals.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <ScrollArea className="h-[300px] w-full pr-4">
+                        {proposals.map((proposal) => (
+                          <div key={proposal.id} className="mb-4 p-4 border rounded-lg">
+                            <h3 className="font-semibold mb-2">{proposal.title}</h3>
+                            <div className="flex justify-between items-center">
+                              <span>Votes: {proposal.votes}</span>
+                              <Button 
+                                onClick={() => handleVote(proposal.id)} 
+                                disabled={proposal.hasVoted}
+                              >
+                                {proposal.hasVoted ? 'Voted' : 'Vote'}
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </ScrollArea>
+                      <DialogFooter>
+                        <Button onClick={() => setIsProposalsOpen(false)}>Close</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </CardFooter>
               </Card>
 
