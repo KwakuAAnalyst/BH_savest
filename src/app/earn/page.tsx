@@ -71,7 +71,7 @@ export default function EarnPage() {
         ]
       }));
       setStakeAmount('');
-      setIsStakeOpen(false);
+      setIsStakeOpen(false); // Close the stake modal
     }
   };
 
@@ -82,12 +82,12 @@ export default function EarnPage() {
         ...prevData,
         totalStaked: prevData.totalStaked - amount,
         transactions: [
-          { type: "Unstake", amount: amount, date: new Date().toISOString().split('T')[0], asset: "Selected Asset" },
+          { type: "Unstake", amount: amount, date: new Date().toISOString().split('T')[0], pool: "Selected Pool" },
           ...prevData.transactions
         ]
       }));
       setUnstakeAmount('');
-      setIsUnstakeOpen(false);
+      setIsUnstakeOpen(false); // Close the unstake modal
     }
   };
 
@@ -103,7 +103,7 @@ export default function EarnPage() {
         ]
       }));
       setClaimAmount('');
-      setIsClaimRewardsOpen(false);
+      setIsClaimRewardsOpen(false); // Close the claim rewards modal
     }
   };
 

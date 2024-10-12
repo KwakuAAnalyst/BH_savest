@@ -26,6 +26,7 @@ export default function InvestPage() {
   const [investmentData, setInvestmentData] = useState({
     totalInvested: 50000,
     currentValue: 62500,
+    totalValue: 62500, // Add this line
     roi: 25,
     portfolios: [
       { name: "Conservative", risk: "Low", return: "5-8%", allocation: 30 },
@@ -96,13 +97,19 @@ export default function InvestPage() {
       setInvestmentData(prevData => ({
         ...prevData,
         totalValue: prevData.totalValue - amount,
+        currentValue: prevData.currentValue - amount, // Update current value as well
         transactions: [
-          { type: "Withdrawal", amount: amount, date: new Date().toISOString().split('T')[0], from: "Investment Account", to: "Web3 Wallet" },
+          { 
+            type: "Withdrawal", 
+            amount: amount, 
+            date: new Date().toISOString().split('T')[0], 
+            portfolio: "All" // Add a portfolio field to match the existing transaction structure
+          },
           ...prevData.transactions
         ]
       }));
       setWithdrawAmount('');
-      setIsWithdrawOpen(false);
+      setIsWithdrawOpen(false); // Close the withdrawal modal
     }
   };
 

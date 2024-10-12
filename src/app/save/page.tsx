@@ -56,7 +56,7 @@ export default function SavePage() {
         goals: [...prevData.goals, { name: newGoal.name, target: parseFloat(newGoal.target), current: 0 }]
       }));
       setNewGoal({ name: '', target: '' });
-      setIsAddGoalOpen(false);
+      setIsAddGoalOpen(false); // Close the "Add New Goal" modal
     }
   };
 
@@ -65,8 +65,6 @@ export default function SavePage() {
   };
 
   const handleDeposit = () => {
-    // This is where you would typically integrate with a web3 wallet
-    // For now, we'll just update the balance and add a transaction
     const amount = parseFloat(depositAmount);
     if (!isNaN(amount) && amount > 0) {
       setSavingsData(prevData => ({
@@ -78,7 +76,7 @@ export default function SavePage() {
         ]
       }));
       setDepositAmount('');
-      setIsDepositOpen(false);
+      setIsDepositOpen(false); // Close the deposit modal
     }
   };
 
@@ -94,7 +92,7 @@ export default function SavePage() {
         ]
       }));
       setWithdrawAmount('');
-      setIsWithdrawOpen(false);
+      setIsWithdrawOpen(false); // Close the withdrawal modal
     }
   };
 
@@ -146,7 +144,7 @@ export default function SavePage() {
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button onClick={handleDeposit}>Connect Wallet & Deposit</Button>
+                        <Button onClick={handleDeposit}>Confirm Deposit</Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
