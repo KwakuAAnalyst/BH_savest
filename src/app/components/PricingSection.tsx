@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 const tiers = [
   {
     name: 'Basic',
-    price: 9,
+    price: 'Free',
     description: 'Perfect for beginners looking to start their financial journey.',
     features: [
       'Core Savings & Investment Tools',
@@ -15,7 +15,7 @@ const tiers = [
       'Basic Support (24-48h response)',
       'Mobile Access',
     ],
-    cta: 'Start with Basic',
+    cta: 'Start for Free',
   },
   {
     name: 'Pro',
@@ -73,8 +73,8 @@ export default function PricingSection() {
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-4xl font-bold">
-                  {typeof tier.price === 'number' ? `$${tier.price}` : tier.price}
-                  <span className="text-base font-normal text-muted-foreground">/month</span>
+                  {tier.price}
+                  {tier.price !== 'Free' && tier.price !== 'Custom' && <span className="text-base font-normal text-muted-foreground">/month</span>}
                 </p>
                 <ul className="mt-6 space-y-4">
                   {tier.features.map((feature) => (

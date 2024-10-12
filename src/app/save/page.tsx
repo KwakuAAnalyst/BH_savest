@@ -13,6 +13,7 @@ import Footer from '@/app/components/Footer';
 import { useUser, SignInButton } from '@clerk/nextjs';
 import { ArrowUpRight, ArrowDownLeft, Wallet, Target, History, Zap, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import Image from 'next/image';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 
 
 export default function SavePage() {
@@ -24,6 +25,9 @@ export default function SavePage() {
   const [isTransactionHistoryExpanded, setIsTransactionHistoryExpanded] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [isHighYieldModalOpen, setIsHighYieldModalOpen] = useState(false);
+  const [isRoundUpModalOpen, setIsRoundUpModalOpen] = useState(false);
+  const [isGoalBasedModalOpen, setIsGoalBasedModalOpen] = useState(false);
 
   // Mock data for the dashboard
   const [savingsData, setSavingsData] = useState({
@@ -370,7 +374,7 @@ export default function SavePage() {
             >
               <h2 className="text-3xl font-bold mb-8 text-center">Saving Options</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {['High-Yield Savings', 'Round-Up Savings', 'Goal-Based Savings'].map((option, index) => (
+                {['High-Yield Savings', 'Round-Up Savings', 'Goal-Based Savings'].map((option) => (
                   <Card key={option}>
                     <CardHeader>
                       <CardTitle>{option}</CardTitle>
@@ -381,9 +385,79 @@ export default function SavePage() {
                       </CardDescription>
                     </CardContent>
                     <CardFooter>
-                      <SignInButton mode="modal">
-                        <Button className="w-full">Learn More</Button>
-                      </SignInButton>
+                      {option === 'High-Yield Savings' ? (
+                        <Dialog open={isHighYieldModalOpen} onOpenChange={setIsHighYieldModalOpen}>
+                          <DialogTrigger asChild>
+                            <Button className="w-full">Learn More</Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>High-Yield Savings</DialogTitle>
+                              <DialogDescription>
+                                Maximize your returns with our High-Yield Savings option, designed for those who want to grow their savings while minimizing risk. Our decentralized finance (DeFi) platform offers competitive interest rates that far surpass traditional banking options, allowing you to earn passive income effortlessly.
+                                
+                                <h3 className="font-semibold mt-4 mb-2">Key Benefits:</h3>
+                                <ul className="list-disc pl-5">
+                                  <li>Higher Interest Rates: Earn significantly more than traditional savings accounts.</li>
+                                  <li>Decentralized & Secure: Your funds are safely stored in smart contracts, fully transparent and secured on the blockchain.</li>
+                                  <li>Flexible Deposits & Withdrawals: No lock-in periods; deposit or withdraw your funds anytime.</li>
+                                  <li>Stablecoins Supported: Save in trusted stablecoins like USDC, DAI, and more to avoid market volatility.</li>
+                                </ul>
+                                
+                                <p className="mt-4">Start saving today and let your money work for you with our High-Yield Savings plan.</p>
+                              </DialogDescription>
+                            </DialogHeader>
+                          </DialogContent>
+                        </Dialog>
+                      ) : option === 'Round-Up Savings' ? (
+                        <Dialog open={isRoundUpModalOpen} onOpenChange={setIsRoundUpModalOpen}>
+                          <DialogTrigger asChild>
+                            <Button className="w-full">Learn More</Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Round-Up Savings</DialogTitle>
+                              <DialogDescription>
+                                Turn everyday spending into effortless savings with our Round-Up Savings feature. Every time you make a purchase, we round up the transaction to the nearest dollar and automatically deposit the spare change into your savings account. It's an easy and automatic way to build your savings over time without any extra effort.
+                                
+                                <h3 className="font-semibold mt-4 mb-2">Key Benefits:</h3>
+                                <ul className="list-disc pl-5">
+                                  <li>Effortless Savings: Save a little every time you spend without even thinking about it.</li>
+                                  <li>Automatic Deposits: Spare change from everyday purchases is rounded up and saved for you.</li>
+                                  <li>Flexible & Customizable: Adjust your round-up settings to match your financial goals.</li>
+                                  <li>Compounding Growth: Watch your small savings add up and grow over time through our high-yield options.</li>
+                                </ul>
+                                
+                                <p className="mt-4">Start small, save big! With Round-Up Savings, your daily purchases can turn into long-term financial growth.</p>
+                              </DialogDescription>
+                            </DialogHeader>
+                          </DialogContent>
+                        </Dialog>
+                      ) : (
+                        <Dialog open={isGoalBasedModalOpen} onOpenChange={setIsGoalBasedModalOpen}>
+                          <DialogTrigger asChild>
+                            <Button className="w-full">Learn More</Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Goal-Based Savings</DialogTitle>
+                              <DialogDescription>
+                                Achieve your financial dreams with Goal-Based Savings. This feature allows you to set specific savings goals—whether it's for a vacation, a new car, or an emergency fund—and track your progress effortlessly. Our platform helps you stay disciplined and motivated by providing clear milestones and automated savings plans tailored to your goals.
+
+                                <h3 className="font-semibold mt-4 mb-2">Key Benefits:</h3>
+                                <ul className="list-disc pl-5">
+                                  <li>Personalized Goals: Set and customize savings goals for anything you want to achieve.</li>
+                                  <li>Automated Savings Plans: Automatically allocate funds towards your goals based on your preferences.</li>
+                                  <li>Progress Tracking: Stay on top of your savings with real-time tracking and milestone updates.</li>
+                                  <li>Flexible Contributions: Adjust your savings amounts and timelines as your priorities change.</li>
+                                </ul>
+
+                                <p className="mt-4">Start reaching your financial goals faster with our Goal-Based Savings feature, and turn your aspirations into reality.</p>
+                              </DialogDescription>
+                            </DialogHeader>
+                          </DialogContent>
+                        </Dialog>
+                      )}
                     </CardFooter>
                   </Card>
                 ))}

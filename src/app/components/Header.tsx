@@ -7,7 +7,9 @@ import { Menu } from 'lucide-react'
 import { Button } from "@/app/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/app/components/ui/sheet"
 import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
-
+import { useConnect, useAccount, useDisconnect } from 'wagmi'
+import { coinbaseWallet } from 'wagmi/connectors'
+import { WalletComponents } from './Wallet'
 const navigation = [
   { name: 'Save', href: '/save' },
   { name: 'Invest', href: '/invest' },
@@ -19,6 +21,9 @@ const navigation = [
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
+  const { connect } = useConnect()
+  const { address } = useAccount()
+  const { disconnect } = useDisconnect()
 
   return (
     <header className="bg-background sticky top-0 z-50 w-full border-b border-border/40 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -54,15 +59,20 @@ export default function Header() {
           <div className="hidden md:flex items-center space-x-4">
             <SignedOut>
               <SignInButton mode="modal">
-                <Button variant="ghost">Sign In</Button>
+                <Button variant="ghost">Sign in</Button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <Button>Sign Up</Button>
+                <Button variant="default">Sign up</Button>
               </SignUpButton>
             </SignedOut>
             <SignedIn>
               <UserButton afterSignOutUrl="/" />
             </SignedIn>
+            {/*{address ? // omitted for brevity
+ 
+ <WalletComponents /> 
+   : <button onClick={() => connect({ connector: coinbaseWallet() })}>Sign In</button>}*/}
+            
           </div>
 
           {/* Mobile menu button */}
@@ -91,10 +101,10 @@ export default function Header() {
                   <div className="flex flex-col gap-2 mt-4">
                     <SignedOut>
                       <SignInButton mode="modal">
-                        <Button variant="ghost" className="w-full">Sign In</Button>
+                        <Button variant="ghost" className="w-full justify-start">Sign in</Button>
                       </SignInButton>
                       <SignUpButton mode="modal">
-                        <Button className="w-full">Sign Up</Button>
+                        <Button variant="default" className="w-full justify-start">Sign up</Button>
                       </SignUpButton>
                     </SignedOut>
                     <SignedIn>

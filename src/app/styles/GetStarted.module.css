@@ -1,0 +1,68 @@
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.mainContent {
+  flex: 1;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.pageTitle {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.introSection {
+  margin-bottom: 2rem;
+}
+
+.stepSection {
+  margin-bottom: 2rem;
+}
+
+.stepSection h2 {
+  font-size: 1.8rem;
+  color: #444;
+  margin-bottom: 1rem;
+}
+
+.stepSection ul {
+  padding-left: 1.5rem;
+}
+
+.tip, .note, .important {
+  background-color: #f0f0f0;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-top: 1rem;
+}
+
+.tip {
+  border-left: 4px solid #4CAF50;
+}
+
+.note {
+  border-left: 4px solid #2196F3;
+}
+
+.important {
+  border-left: 4px solid #FFC107;
+}
+
+.ctaSection {
+  background-color: #f9f9f9;
+  padding: 2rem;
+  border-radius: 8px;
+  margin-top: 2rem;
+}
+
+.ctaSection h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 1rem;
+}
