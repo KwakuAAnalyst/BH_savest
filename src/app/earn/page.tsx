@@ -1,19 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from "@/app/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { Progress } from "@/app/components/ui/progress";
+import { CardDescription, Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import { useUser, SignInButton } from '@clerk/nextjs';
-import { PieChart, Wallet, Vote, Zap, BarChart2, RefreshCw, TrendingUp, ArrowUpRight, ArrowDownLeft, History, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { ethers } from 'ethers';
+import { PieChart, Wallet, Vote, Zap, ArrowUpRight, ArrowDownLeft, ChevronDown, ChevronUp, History, RefreshCw, Check } from 'lucide-react';
 import Image from 'next/image';
 import { ScrollArea } from "@/app/components/ui/scroll-area";
+import TransactionHistory from "@/app/components/TransactionHistory";
+
+import EthStaking from "@/app/abi/EthStaking.json";
+const contractAddress = "0x42a0bd840bc220e64bb4a1710bafb4e1340e3829"; // Your contract address
+const contractABI = EthStaking;
 
 export default function EarnPage() {
   const { isSignedIn, user } = useUser();
@@ -25,12 +30,18 @@ export default function EarnPage() {
   const [isClaimRewardsOpen, setIsClaimRewardsOpen] = useState(false);
   const [claimAmount, setClaimAmount] = useState('');
   const [isProposalsOpen, setIsProposalsOpen] = useState(false);
+  const [stakedBalance, setStakedBalance] = useState("0.000000");
+  const [stakeError, setStakeError] = useState(''); // Error for staking
+  const [unstakeError, setUnstakeError] = useState(''); // Error for unstaking
+  const [isStakeErrorOpen, setIsStakeErrorOpen] = useState(false); // Control for stake error pop-up
+  const [isUnstakeErrorOpen, setIsUnstakeErrorOpen] = useState(false); // Control for unstake error pop-up
+  const [stakeSuccess, setStakeSuccess] = useState(''); // Success message for staking
+  const [unstakeSuccess, setUnstakeSuccess] = useState(''); // Success message for unstaking
 
   // Mock data for the dashboard
   const [earningData, setEarningData] = useState({
-    totalStaked: 50000,
     tvl: 1000000,
-    currentApy: 12.5,
+    currentApy: 90,
     accumulatedRewards: 1250,
     nextPayout: "2d 14h 32m",
     stakingPools: [
@@ -59,49 +70,135 @@ export default function EarnPage() {
     { id: 4, title: "Reduce unstaking period to 24 hours", votes: 2100, hasVoted: false },
   ]);
 
-  const handleStake = () => {
-    const amount = parseFloat(stakeAmount);
-    if (!isNaN(amount) && amount > 0) {
-      setEarningData(prevData => ({
-        ...prevData,
-        totalStaked: prevData.totalStaked + amount,
-        transactions: [
-          { type: "Stake", amount: amount, date: new Date().toISOString().split('T')[0], pool: "30-day lock" },
-          ...prevData.transactions
-        ]
-      }));
+  // Fetch staked balance on page load
+  useEffect(() => {
+    if (isSignedIn && user && user.primaryEmailAddress) {
+      fetchStakedBalance();
+    }
+  }, [isSignedIn, user]);
+
+  // Updated fetchStakedBalance function using getTotalBalance
+  const fetchStakedBalance = async () => {
+    try {
+      if (!window.ethereum) {
+        throw new Error('MetaMask is not installed. Please install MetaMask and try again.');
+      }
+  
+      const provider = new ethers.BrowserProvider(window.ethereum as any);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(contractAddress, contractABI, signer);
+  
+      // Fetch the user's wallet address
+      const walletAddress = await signer.getAddress();
+  
+      // Call the getTotalBalance function using the wallet address
+      const totalBalance = await contract.getTotalBalance(walletAddress); 
+      const formattedStakedBalance = ethers.formatEther(totalBalance).toString();
+  
+      setStakedBalance(parseFloat(formattedStakedBalance).toFixed(6));
+    } catch (error) {
+      console.error("Failed to fetch staked balance:", error);
+    }
+  };
+  
+
+  const handleStake = async () => {
+    try {
+      // Close the stake modal immediately when the button is clicked
+      setIsStakeOpen(false); 
+  
+      if (!window.ethereum) {
+        throw new Error('MetaMask is not installed. Please install MetaMask and try again.');
+      }
+  
+      const provider = new ethers.BrowserProvider(window.ethereum as any);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(contractAddress, contractABI, signer);
+  
+      // Fetch the user's wallet address
+      const walletAddress = await signer.getAddress();
+  
+      // Call the getTotalBalance function using the wallet address to check staked balance
+      const totalBalance = await contract.getTotalBalance(walletAddress); 
+      const formattedStakedBalance = ethers.formatEther(totalBalance).toString();
+  
+      // If the user already has staked assets, show error and prevent staking
+      if (parseFloat(formattedStakedBalance) > 0) {  
+        setStakeError('Please unstake your currently staked assets to stake again.');
+        setIsStakeErrorOpen(true);
+        return;
+      }
+  
+      // Proceed with staking if the balance is zero
+      const amount = parseFloat(stakeAmount);
+      if (isNaN(amount) || amount <= 0) {
+        setStakeError('Please enter a valid amount to stake.');
+        setIsStakeErrorOpen(true);
+        return;
+      }
+  
+      const tx = await contract.stake({
+        value: ethers.parseEther(stakeAmount) // Convert amount to wei and send it to the stake function
+      });
+      
+      await tx.wait(); // Wait for the transaction to be confirmed
+      console.log('Staked successfully:', tx);
+      fetchStakedBalance(); // Refresh the staked balance
+  
       setStakeAmount('');
-      setIsStakeOpen(false); // Close the stake modal
+      // Show success message
+      setStakeSuccess('Stake successful!');
+      setTimeout(() => {
+        setStakeSuccess('');
+      }, 3000); // Hide after 3 seconds
+    } catch (error) {
+      console.error("Failed to stake:", error);
     }
   };
-
-  const handleUnstake = () => {
-    const amount = parseFloat(unstakeAmount);
-    if (!isNaN(amount) && amount > 0 && amount <= earningData.totalStaked) {
-      setEarningData(prevData => ({
-        ...prevData,
-        totalStaked: prevData.totalStaked - amount,
-        transactions: [
-          { type: "Unstake", amount: amount, date: new Date().toISOString().split('T')[0], pool: "Selected Pool" },
-          ...prevData.transactions
-        ]
-      }));
-      setUnstakeAmount('');
-      setIsUnstakeOpen(false); // Close the unstake modal
+  
+  const handleUnstake = async () => {
+    setIsUnstakeOpen(false); // Close modal immediately
+    try {
+      setUnstakeError(''); // Clear any previous errors
+  
+      if (!window.ethereum) {
+        throw new Error('MetaMask is not installed. Please install MetaMask and try again.');
+      }
+  
+      const provider = new ethers.BrowserProvider(window.ethereum as any);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(contractAddress, contractABI, signer);
+  
+      // Call the unstake function without any arguments
+      const tx = await contract.unstake(); 
+      await tx.wait(); // Wait for the transaction to be confirmed
+      console.log('Unstaked successfully:', tx);
+  
+      fetchStakedBalance(); // Refresh the staked balance
+  
+      setUnstakeSuccess('Unstake successful!');
+      setTimeout(() => {
+        setUnstakeSuccess('');
+      }, 3000); // Hide after 3 seconds
+    } catch (error: any) {
+      // Directly access the message property from the error object
+      const errorMessage = error.message || "An unknown error occurred";
+  
+      // Check if the error message includes 'Staking period not complete'
+      if (errorMessage.includes('Staking period not complete')) {
+        setUnstakeError('You cannot unstake yet. The staking period is not complete.');
+        setIsUnstakeErrorOpen(true);
+      } else {
+        console.error("Failed to unstake:", errorMessage);
+        setUnstakeError('An error occurred while trying to unstake. Please try again.');
+        setIsUnstakeErrorOpen(true);
+      }
     }
   };
-
-  const handleClaimRewards = () => {
+  
+  const handleClaimRewards = async () => {
     const amount = parseFloat(claimAmount);
     if (!isNaN(amount) && amount > 0 && amount <= earningData.accumulatedRewards) {
-      setEarningData(prevData => ({
-        ...prevData,
-        accumulatedRewards: prevData.accumulatedRewards - amount,
-        transactions: [
-          { type: "Reward Claim", amount: amount, date: new Date().toISOString().split('T')[0], pool: "All Pools" },
-          ...prevData.transactions
-        ]
-      }));
       setClaimAmount('');
       setIsClaimRewardsOpen(false); // Close the claim rewards modal
     }
@@ -129,7 +226,7 @@ export default function EarnPage() {
         {isSignedIn ? (
           <div>
             <h1 className="text-4xl font-bold mb-6 text-center">Your Earning Dashboard</h1>
-            <p className="text-xl mb-8 text-center">Welcome to your personalized earning dashboard, {user.firstName}.</p>
+            <p className="text-xl mb-8 text-center">Welcome to your personalized earning dashboard, {user?.firstName}.</p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <Card>
@@ -139,9 +236,9 @@ export default function EarnPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">Total Staked: ${earningData.totalStaked.toLocaleString()}</p>
+                  <p className="text-2xl font-bold">Total Staked: {stakedBalance} ETH</p>
                   <p className="text-xl">TVL: ${earningData.tvl.toLocaleString()}</p>
-                  <p className="text-lg text-green-500">Current APY: {earningData.currentApy}%</p>
+                  <p className="text-lg text-green-500">Current Lock Days: {earningData.currentApy}</p>
                 </CardContent>
                 <CardFooter className="flex justify-between">
                   <Dialog open={isStakeOpen} onOpenChange={setIsStakeOpen}>
@@ -152,7 +249,7 @@ export default function EarnPage() {
                       <DialogHeader>
                         <DialogTitle>Stake Funds</DialogTitle>
                         <DialogDescription>
-                          Enter the amount you want to stake and choose a staking pool.
+                          Enter the amount you want to stake and confirm.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
@@ -169,40 +266,52 @@ export default function EarnPage() {
                           />
                         </div>
                       </div>
+                      {/* Pop-up for Stake Error */}
+                      {/* Pop-up for Stake Error */}
+                  <Dialog open={isStakeErrorOpen} onOpenChange={setIsStakeErrorOpen}>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Error</DialogTitle>
+                        <DialogDescription>{stakeError}</DialogDescription>
+                      </DialogHeader>
                       <DialogFooter>
-                        <Button onClick={handleStake}>Stake</Button>
+                        <Button onClick={() => setIsStakeErrorOpen(false)}>Close</Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
+                      <DialogFooter>
+                        <Button onClick={handleStake}>Confirm Stake</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  {/* Pop-up for Unstake Error */}
+                    <Dialog open={isUnstakeErrorOpen} onOpenChange={setIsUnstakeErrorOpen}>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>Error</DialogTitle>
+                          <DialogDescription>{unstakeError}</DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                          <Button onClick={() => setIsUnstakeErrorOpen(false)}>Close</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+
                   <Dialog open={isUnstakeOpen} onOpenChange={setIsUnstakeOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline"><ArrowDownLeft className="mr-2" /> Unstake</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>Unstake Assets</DialogTitle>
-                        <DialogDescription>
-                          Enter the amount you want to unstake from your earning account.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="unstake-amount" className="text-right">
-                            Amount
-                          </Label>
-                          <Input
-                            id="unstake-amount"
-                            type="number"
-                            value={unstakeAmount}
-                            onChange={(e) => setUnstakeAmount(e.target.value)}
-                            className="col-span-3"
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button onClick={handleUnstake}>Confirm Unstake</Button>
-                      </DialogFooter>
-                    </DialogContent>
+                        </DialogTrigger>
+                          <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                              <DialogTitle>Unstake Assets</DialogTitle>
+                                <DialogDescription>
+                                  Are you sure you want to unstake your assets? Click confirm to proceed.
+                                </DialogDescription>
+                                    </DialogHeader>
+                            <DialogFooter>
+                                    <Button onClick={handleUnstake}>Confirm Unstake</Button>
+                             </DialogFooter>
+                                </DialogContent>
                   </Dialog>
                 </CardFooter>
               </Card>
@@ -362,6 +471,37 @@ export default function EarnPage() {
                 </CardFooter>
               </Card>
             </div>
+
+            {/* Success messages */}
+            {stakeSuccess && <p className="text-green-500 text-center mt-4">{stakeSuccess}</p>}
+            {unstakeSuccess && <p className="text-green-500 text-center mt-4">{unstakeSuccess}</p>}
+
+            {/* Pop-up for Stake Error */}
+            <Dialog open={isStakeErrorOpen} onOpenChange={setIsStakeErrorOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Error</DialogTitle>
+                  <DialogDescription>{stakeError}</DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button onClick={() => setIsStakeErrorOpen(false)}>Close</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Pop-up for Unstake Error */}
+            <Dialog open={isUnstakeErrorOpen} onOpenChange={setIsUnstakeErrorOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Error</DialogTitle>
+                  <DialogDescription>{unstakeError}</DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button onClick={() => setIsUnstakeErrorOpen(false)}>Close</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
           </div>
         ) : (
           <>

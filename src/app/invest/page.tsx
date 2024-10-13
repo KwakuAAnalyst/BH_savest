@@ -3,16 +3,20 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from "@/app/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { Progress } from "@/app/components/ui/progress";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
+import { Progress } from "@/app/components/ui/progress";
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import { useUser, SignInButton } from '@clerk/nextjs';
-import { PieChart, Wallet, TrendingUp, Zap, BarChart2, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownLeft, History, Check } from 'lucide-react';
-import Image from 'next/image';
+import { PieChart, Wallet, BarChart2, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownLeft, History } from 'lucide-react';
+import { ethers } from 'ethers';
+
+import EthInvestment from "@/app/abi/EthInvestment.json";
+const contractAddress = "0xcfa367406ad0abb67411f7b72b86863f4949dc15"; // Your contract address
+const contractABI = EthInvestment;
 
 export default function InvestPage() {
   const { isSignedIn, user } = useUser();
@@ -21,12 +25,13 @@ export default function InvestPage() {
   const [investAmount, setInvestAmount] = useState('');
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [investSuccess, setInvestSuccess] = useState(false); // Investment success flag
+  const [withdrawSuccess, setWithdrawSuccess] = useState(false); // Withdraw success flag
 
-  // Mock data for the dashboard
   const [investmentData, setInvestmentData] = useState({
     totalInvested: 50000,
     currentValue: 62500,
-    totalValue: 62500, // Add this line
+    totalValue: 62500,
     roi: 25,
     portfolios: [
       { name: "Conservative", risk: "Low", return: "5-8%", allocation: 30 },
@@ -70,47 +75,87 @@ export default function InvestPage() {
     },
   });
 
-  const toggleInsights = () => {
-    setIsInsightsExpanded(!isInsightsExpanded);
-  };
-
-  const handleInvest = () => {
+  // Function to handle investing by calling the deposit function
+  const handleInvest = async () => {
     const amount = parseFloat(investAmount);
     if (!isNaN(amount) && amount > 0) {
-      setInvestmentData(prevData => ({
-        ...prevData,
-        totalInvested: prevData.totalInvested + amount,
-        currentValue: prevData.currentValue + amount,
-        transactions: [
-          { type: "Investment", amount: amount, date: new Date().toISOString().split('T')[0], portfolio: "Balanced" },
-          ...prevData.transactions
-        ]
-      }));
-      setInvestAmount('');
-      setIsInvestOpen(false);
+      try {
+        // Close modal immediately after button click
+        setIsInvestOpen(false);
+
+        const provider = new ethers.BrowserProvider(window.ethereum as any);
+        const signer = await provider.getSigner();
+        const contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+        const amountInWei = ethers.parseEther(investAmount); // Convert to Wei
+        const tx = await contract.deposit({ value: amountInWei });
+        await tx.wait(); // Wait for the transaction to be mined
+
+        // Only after the transaction is confirmed, display success
+        setInvestmentData(prevData => ({
+          ...prevData,
+          totalInvested: prevData.totalInvested + amount,
+          currentValue: prevData.currentValue + amount,
+          transactions: [
+            { type: "Investment", amount: amount, date: new Date().toISOString().split('T')[0], portfolio: "Balanced" },
+            ...prevData.transactions
+          ]
+        }));
+        setInvestAmount('');
+        setInvestSuccess(true); // Set invest success flag
+        setTimeout(() => setInvestSuccess(false), 3000); // Clear success message after 3 seconds
+      } catch (error) {
+        console.error("Investment failed:", error);
+      }
+    } else {
+      alert("Please enter a valid investment amount.");
     }
   };
 
-  const handleWithdraw = () => {
+  // Function to handle withdrawing by calling the withdraw function
+  const handleWithdraw = async () => {
     const amount = parseFloat(withdrawAmount);
     if (!isNaN(amount) && amount > 0 && amount <= investmentData.totalValue) {
-      setInvestmentData(prevData => ({
-        ...prevData,
-        totalValue: prevData.totalValue - amount,
-        currentValue: prevData.currentValue - amount, // Update current value as well
-        transactions: [
-          { 
-            type: "Withdrawal", 
-            amount: amount, 
-            date: new Date().toISOString().split('T')[0], 
-            portfolio: "All" // Add a portfolio field to match the existing transaction structure
-          },
-          ...prevData.transactions
-        ]
-      }));
-      setWithdrawAmount('');
-      setIsWithdrawOpen(false); // Close the withdrawal modal
+      try {
+        // Close modal immediately after button click
+        setIsWithdrawOpen(false);
+
+        const provider = new ethers.BrowserProvider(window.ethereum as any);
+        const signer = await provider.getSigner();
+        const contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+        const amountInWei = ethers.parseEther(withdrawAmount); // Convert to Wei
+        const tx = await contract.withdraw(amountInWei);
+        await tx.wait(); // Wait for the transaction to be mined
+
+        // Only after the transaction is confirmed, display success
+        setInvestmentData(prevData => ({
+          ...prevData,
+          totalValue: prevData.totalValue - amount,
+          currentValue: prevData.currentValue - amount,
+          transactions: [
+            {
+              type: "Withdrawal",
+              amount: amount,
+              date: new Date().toISOString().split('T')[0],
+              portfolio: "All"
+            },
+            ...prevData.transactions
+          ]
+        }));
+        setWithdrawAmount('');
+        setWithdrawSuccess(true); // Set withdraw success flag
+        setTimeout(() => setWithdrawSuccess(false), 3000); // Clear success message after 3 seconds
+      } catch (error) {
+        console.error("Withdrawal failed:", error);
+      }
+    } else {
+      alert("Please enter a valid withdrawal amount.");
     }
+  };
+
+  const toggleInsights = () => {
+    setIsInsightsExpanded(!isInsightsExpanded);
   };
 
   return (
@@ -122,7 +167,7 @@ export default function InvestPage() {
           <div>
             <h1 className="text-4xl font-bold mb-6 text-center">Your Investment Dashboard</h1>
             <p className="text-xl mb-8 text-center">Welcome to your personalized investment dashboard, {user.firstName}.</p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <Card>
                 <CardHeader>
@@ -144,7 +189,7 @@ export default function InvestPage() {
                       <DialogHeader>
                         <DialogTitle>Invest Funds</DialogTitle>
                         <DialogDescription>
-                          Enter the amount you want to invest and choose your portfolio allocation.
+                          Enter the amount you want to invest and confirm the transaction.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
@@ -162,10 +207,11 @@ export default function InvestPage() {
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button onClick={handleInvest}>Invest</Button>
+                        <Button onClick={handleInvest}>Confirm Investment</Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
+
                   <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline"><ArrowDownLeft className="mr-2" /> Withdraw</Button>
@@ -174,7 +220,7 @@ export default function InvestPage() {
                       <DialogHeader>
                         <DialogTitle>Withdraw Funds</DialogTitle>
                         <DialogDescription>
-                          Enter the amount you want to withdraw from your investment account.
+                          Enter the amount you want to withdraw and confirm the transaction.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
@@ -197,8 +243,11 @@ export default function InvestPage() {
                     </DialogContent>
                   </Dialog>
                 </CardFooter>
+                {investSuccess && <p className="text-green-500 text-center mt-4">Investment successful!</p>}
+                {withdrawSuccess && <p className="text-green-500 text-center mt-4">Withdrawal successful!</p>}
               </Card>
 
+              {/* Investment Options Placeholder */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -220,6 +269,7 @@ export default function InvestPage() {
                 </CardFooter>
               </Card>
 
+              {/* Investment Insights Placeholder */}
               <Card className={`md:col-span-2 ${isInsightsExpanded ? 'row-span-2' : ''}`}>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -230,7 +280,7 @@ export default function InvestPage() {
                   <p>Your portfolio is outperforming the market by {investmentData.detailedAnalytics.marketOutperformance}%</p>
                   <p>Diversification Score: {investmentData.detailedAnalytics.diversificationScore}/10</p>
                   <p>Risk Assessment: {investmentData.detailedAnalytics.riskAssessment}</p>
-                  
+
                   {isInsightsExpanded && (
                     <div className="mt-4 space-y-4">
                       <div>
@@ -242,14 +292,14 @@ export default function InvestPage() {
                           </div>
                         ))}
                       </div>
-                      
+
                       <div>
                         <h3 className="font-semibold mb-2">Monthly Returns</h3>
                         <div className="flex justify-between">
                           {investmentData.detailedAnalytics.monthlyReturns.map((month, index) => (
                             <div key={index} className="text-center">
                               <div className={`h-20 w-8 bg-primary-foreground relative`}>
-                                <div 
+                                <div
                                   className={`absolute bottom-0 left-0 right-0 bg-primary`}
                                   style={{ height: `${Math.abs(month.return) * 5}%` }}
                                 ></div>
@@ -262,7 +312,7 @@ export default function InvestPage() {
                           ))}
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <h3 className="font-semibold mb-2">Top Performers</h3>
@@ -287,8 +337,8 @@ export default function InvestPage() {
                   )}
                 </CardContent>
                 <CardFooter>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full"
                     onClick={toggleInsights}
                   >
@@ -305,6 +355,7 @@ export default function InvestPage() {
                 </CardFooter>
               </Card>
 
+              {/* Recent Transactions Placeholder */}
               <Card className="md:col-span-2">
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -342,8 +393,8 @@ export default function InvestPage() {
             </div>
           </div>
         ) : (
-          <>
-            <motion.section 
+          <div>
+            <motion.section
               className="text-center mb-12"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -357,112 +408,7 @@ export default function InvestPage() {
                 </Button>
               </SignInButton>
             </motion.section>
-
-            <motion.section 
-              className="mb-12"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <div className="flex flex-col md:flex-row items-center gap-8">
-                <Card className="w-full md:w-1/2">
-                  <CardHeader>
-                    <CardTitle className="text-2xl font-bold text-center">Why Invest with Us?</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="list-none space-y-2 text-muted-foreground">
-                      <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Diversified investment portfolios</li>
-                      <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Automated rebalancing</li>
-                      <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Low-cost index funds and ETFs</li>
-                      <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Real-time performance tracking</li>
-                      <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Expert financial advice</li>
-                    </ul>
-                  </CardContent>
-                </Card>
-                <div className="w-full md:w-1/2">
-                  <Image
-                    src="/stacks.jpg"
-                    alt="Invest with BlockHolder"
-                    width={600}
-                    height={400}
-                    className="rounded-lg shadow-xl object-cover"
-                  />
-                </div>
-              </div>
-            </motion.section>
-
-            <motion.section 
-              className="mb-12"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <h2 className="text-3xl font-bold mb-8 text-center">Investment Options</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {[
-                  {
-                    title: 'Stocks',
-                    description: 'Invest in individual companies or diversified stock portfolios for long-term growth potential.',
-                    icon: <TrendingUp className="h-6 w-6" />
-                  },
-                  {
-                    title: 'ETFs',
-                    description: 'Access a wide range of assets through low-cost, diversified Exchange-Traded Funds.',
-                    icon: <BarChart2 className="h-6 w-6" />
-                  },
-                  {
-                    title: 'Cryptocurrencies',
-                    description: 'Explore the world of digital assets with our curated selection of cryptocurrencies.',
-                    icon: <Zap className="h-6 w-6" />
-                  }
-                ].map((option, index) => (
-                  <Card key={option.title} className="flex flex-col">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        {option.icon}
-                        {option.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex-grow">
-                      <CardDescription>
-                        {option.description}
-                      </CardDescription>
-                    </CardContent>
-                    <CardFooter className="mt-auto">
-                      <SignInButton mode="modal">
-                        <Button className="w-full">Learn More</Button>
-                      </SignInButton>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            </motion.section>
-
-            <motion.section 
-              className="mb-12"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-center">Start Your Investing Journey</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-center">
-                    Sign in now to access our full range of investment tools and start building your financial future.
-                  </CardDescription>
-                </CardContent>
-                <CardFooter className="flex justify-center">
-                  <SignInButton mode="modal">
-                    <Button size="lg">
-                      Sign In to Start Investing
-                    </Button>
-                  </SignInButton>
-                </CardFooter>
-              </Card>
-            </motion.section>
-          </>
+          </div>
         )}
       </main>
 
