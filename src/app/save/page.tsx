@@ -3,17 +3,25 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from "@/app/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { Progress } from "@/app/components/ui/progress";
-import { Dialog, DialogDescription, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
+import { CardDescription, Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import { useUser, SignInButton } from '@clerk/nextjs';
-import { Zap, ArrowUpRight, ArrowDownLeft, Wallet, Target, History, ChevronDown, ChevronUp } from 'lucide-react';
 import { ethers } from 'ethers';
+import { PieChart, Wallet, Target, Zap, ArrowUpRight, ArrowDownLeft, ChevronDown, ChevronUp, History, RefreshCw, Check, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
+import { ScrollArea } from "@/app/components/ui/scroll-area";
+import { Progress } from "@/app/components/ui/progress";
 import SavingContract from "@/app/abi/SavingContract.json";
+import { MagicCard } from "@/app/components/ui/magic-card";
+import { cn } from "@/lib/utils";
+import ShineBorder from "@/app/components/ui/shine-border";
+import WordPullUp from "@/app/components/ui/word-pull-up";
+import { NeonGradientCard } from "@/app/components/ui/neon-gradient-card";
+import { RainbowButton } from "@/app/components/ui/rainbow-button";
 
 const contractAddress = "0x035d1c84106b51c8094697e8d3b26c5df9937ad2"; // Your contract address
 
@@ -26,11 +34,16 @@ export default function SavePage() {
   const [isTransactionHistoryExpanded, setIsTransactionHistoryExpanded] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [balance, setBalance] = useState('0.000000'); // Initialize with 6 decimal places
-  const [depositSuccess, setDepositSuccess] = useState(false); // Deposit success flag
-  const [withdrawSuccess, setWithdrawSuccess] = useState(false); // Withdraw success flag
+  const [balance, setBalance] = useState('0.000000');
+  const [depositSuccess, setDepositSuccess] = useState(false);
+  const [withdrawSuccess, setWithdrawSuccess] = useState(false);
+  const [depositError, setDepositError] = useState('');
+  const [withdrawError, setWithdrawError] = useState('');
+  const [isDepositErrorOpen, setIsDepositErrorOpen] = useState(false);
+  const [isWithdrawErrorOpen, setIsWithdrawErrorOpen] = useState(false);
+
   const [savingsData, setSavingsData] = useState({
-    interestAccrued: '--', // Set interest accrued to --
+    interestAccrued: '--',
     goals: [
       { name: "Emergency Fund", target: 5000, current: 3000 },
       { name: "Vacation", target: 2000, current: 1500 },
@@ -43,7 +56,12 @@ export default function SavePage() {
     ],
   });
 
-  // Fetch balance from the contract for the signed-in user
+  useEffect(() => {
+    if (isSignedIn) {
+      fetchBalance();
+    }
+  }, [isSignedIn]);
+
   const fetchBalance = async () => {
     try {
       if (typeof window.ethereum !== 'undefined') {
@@ -51,10 +69,10 @@ export default function SavePage() {
         const signer = await provider.getSigner();
         const contract = new ethers.Contract(contractAddress, SavingContract, signer);
 
-        const userAddress = await signer.getAddress(); // Get the user address
-        const balanceInWei = await contract.balances(userAddress); // Fetch balance from the mapping
-        const balanceInEther = ethers.formatEther(balanceInWei); // Convert from Wei to Ether
-        setBalance(parseFloat(balanceInEther).toFixed(6)); // Display balance with 6 decimal places
+        const userAddress = await signer.getAddress();
+        const balanceInWei = await contract.balances(userAddress);
+        const balanceInEther = ethers.formatEther(balanceInWei);
+        setBalance(parseFloat(balanceInEther).toFixed(6));
       } else {
         console.error("MetaMask is not installed");
       }
@@ -63,59 +81,61 @@ export default function SavePage() {
     }
   };
 
-  useEffect(() => {
-    if (isSignedIn) {
-      fetchBalance(); // Fetch the balance when the user is signed in
-    }
-  }, [isSignedIn]);
-
   const handleDeposit = async () => {
-    const amount = parseFloat(depositAmount);
-    if (!isNaN(amount) && amount > 0) {
-      try {
-        setIsDepositOpen(false); // Close the deposit modal immediately
-        const provider = new ethers.BrowserProvider(window.ethereum as any);
-        const signer = await provider.getSigner();
-        const contract = new ethers.Contract(contractAddress, SavingContract, signer);
-
-        const amountInWei = ethers.parseEther(depositAmount); // Convert to Wei
-        const tx = await contract.deposit({ value: amountInWei });
-        await tx.wait(); // Wait for the transaction to be mined
-
-        setDepositAmount('');
-        setDepositSuccess(true); // Set deposit success flag
-        setTimeout(() => setDepositSuccess(false), 3000); // Clear success message after 3 seconds
-        fetchBalance(); // Update balance after deposit
-      } catch (error) {
-        console.error("Deposit failed:", error);
+    try {
+      setIsDepositOpen(false);
+      const amount = parseFloat(depositAmount);
+      if (isNaN(amount) || amount <= 0) {
+        setDepositError('Please enter a valid deposit amount.');
+        setIsDepositErrorOpen(true);
+        return;
       }
-    } else {
-      alert("Please enter a valid deposit amount.");
+
+      const provider = new ethers.BrowserProvider(window.ethereum as any);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(contractAddress, SavingContract, signer);
+
+      const amountInWei = ethers.parseEther(depositAmount);
+      const tx = await contract.deposit({ value: amountInWei });
+      await tx.wait();
+
+      setDepositAmount('');
+      setDepositSuccess(true);
+      setTimeout(() => setDepositSuccess(false), 3000);
+      fetchBalance();
+    } catch (error) {
+      console.error("Deposit failed:", error);
+      setDepositError('An error occurred while depositing. Please try again.');
+      setIsDepositErrorOpen(true);
     }
   };
 
   const handleWithdraw = async () => {
-    const amount = parseFloat(withdrawAmount);
-    if (!isNaN(amount) && amount > 0) {
-      try {
-        setIsWithdrawOpen(false); // Close the withdraw modal immediately
-        const provider = new ethers.BrowserProvider(window.ethereum as any);
-        const signer = await provider.getSigner();
-        const contract = new ethers.Contract(contractAddress, SavingContract, signer);
-
-        const amountInWei = ethers.parseEther(withdrawAmount); // Convert to Wei
-        const tx = await contract.withdraw(amountInWei);
-        await tx.wait(); // Wait for the transaction to be mined
-
-        setWithdrawAmount('');
-        setWithdrawSuccess(true); // Set withdraw success flag
-        setTimeout(() => setWithdrawSuccess(false), 3000); // Clear success message after 3 seconds
-        fetchBalance(); // Update balance after withdrawal
-      } catch (error) {
-        console.error("Withdrawal failed:", error);
+    try {
+      setIsWithdrawOpen(false);
+      const amount = parseFloat(withdrawAmount);
+      if (isNaN(amount) || amount <= 0) {
+        setWithdrawError('Please enter a valid withdrawal amount.');
+        setIsWithdrawErrorOpen(true);
+        return;
       }
-    } else {
-      alert("Please enter a valid withdrawal amount.");
+
+      const provider = new ethers.BrowserProvider(window.ethereum as any);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(contractAddress, SavingContract, signer);
+
+      const amountInWei = ethers.parseEther(withdrawAmount);
+      const tx = await contract.withdraw(amountInWei);
+      await tx.wait();
+
+      setWithdrawAmount('');
+      setWithdrawSuccess(true);
+      setTimeout(() => setWithdrawSuccess(false), 3000);
+      fetchBalance();
+    } catch (error) {
+      console.error("Withdrawal failed:", error);
+      setWithdrawError('An error occurred while withdrawing. Please try again.');
+      setIsWithdrawErrorOpen(true);
     }
   };
 
@@ -126,7 +146,7 @@ export default function SavePage() {
         goals: [...prevData.goals, { name: newGoal.name, target: parseFloat(newGoal.target), current: 0 }]
       }));
       setNewGoal({ name: '', target: '' });
-      setIsAddGoalOpen(false); // Close the "Add New Goal" modal
+      setIsAddGoalOpen(false);
     }
   };
 
@@ -141,9 +161,12 @@ export default function SavePage() {
       <main className="flex-grow container mx-auto px-4 py-8">
         {isSignedIn ? (
           <div>
-            <h1 className="text-4xl font-bold mb-6 text-center">Your Savings Dashboard</h1>
+            <WordPullUp 
+              words="Your Savings Dashboard"
+              className="text-4xl font-bold mb-6 text-center"
+            />
             <p className="text-xl mb-8 text-center">Welcome to your personalized savings dashboard, {user.firstName}.</p>
-
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <Card>
                 <CardHeader>
@@ -222,7 +245,6 @@ export default function SavePage() {
                 {withdrawSuccess && <p className="text-green-500 text-center mt-4">Withdrawal successful!</p>}
               </Card>
 
-              {/* Savings Goals Section */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -285,7 +307,6 @@ export default function SavePage() {
                 </CardFooter>
               </Card>
 
-              {/* Transaction History Section */}
               <Card className="md:col-span-2">
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -356,22 +377,173 @@ export default function SavePage() {
                 </CardFooter>
               </Card>
             </div>
+
+            {/* Error Dialogs */}
+            <Dialog open={isDepositErrorOpen} onOpenChange={setIsDepositErrorOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Error</DialogTitle>
+                  <DialogDescription>{depositError}</DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button onClick={() => setIsDepositErrorOpen(false)}>Close</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isWithdrawErrorOpen} onOpenChange={setIsWithdrawErrorOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Error</DialogTitle>
+                  <DialogDescription>{withdrawError}</DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button onClick={() => setIsWithdrawErrorOpen(false)}>Close</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
           </div>
         ) : (
-          <div>
+          <>
             <motion.section 
               className="text-center mb-12"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <h1 className="text-5xl font-bold mb-6">Smart Savings for Your Future</h1>
+              <WordPullUp 
+                words="Smart Savings for Your Future"
+                className="text-5xl font-bold mb-6"
+              />
               <p className="text-xl mb-8 text-muted-foreground">Maximize your savings with our innovative tools and high-yield accounts.</p>
               <SignInButton mode="modal">
                 <Button size="lg">Sign In to Save</Button>
               </SignInButton>
             </motion.section>
-          </div>
+
+            <motion.section 
+              className="mb-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <ShineBorder 
+                  borderRadius={8}
+                  borderWidth={1}
+                  duration={10}
+                  color={["#8B5CF6", "#6366F1", "#4F46E5"]}
+                  className="w-full md:w-1/2"
+                >
+                  <Card className="w-full bg-transparent border-none shadow-none">
+                    <CardHeader>
+                      <CardTitle className="text-2xl font-bold text-center">Why Save with Us?</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="list-none space-y-2 text-muted-foreground">
+                        <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> High-yield savings accounts</li>
+                        <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Smart goal-based savings</li>
+                        <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Automated savings plans</li>
+                        <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Real-time tracking and insights</li>
+                        <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Secure and transparent transactions</li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </ShineBorder>
+                <div className="w-full md:w-1/2">
+                  <Image
+                    src="/hsssjj.jpg"
+                    alt="Save with BlockHolder"
+                    width={800}
+                    height={600}
+                    className="rounded-lg shadow-xl object-cover"
+                  />
+                </div>
+              </div>
+            </motion.section>
+
+            <motion.section 
+              className="mb-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <h2 className="text-3xl font-bold mb-8 text-center">Savings Features</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[
+                  {
+                    title: "Goal-based Savings",
+                    description: "Set and track personalized savings goals for your future plans.",
+                    icon: Target,
+                  },
+                  {
+                    title: "Auto-save",
+                    description: "Automate your savings with customizable recurring transfers.",
+                    icon: RefreshCw,
+                  },
+                  {
+                    title: "Interest Optimization",
+                    description: "Maximize your returns with our intelligent interest allocation system.",
+                    icon: Zap,
+                  },
+                ].map((feature) => (
+                  <MagicCard 
+                    key={feature.title} 
+                    className="p-6 bg-gradient-to-br from-purple-900 to-indigo-900 text-white"
+                    gradientColor="rgba(255, 255, 255, 0.1)"
+                  >
+                    <div className="flex flex-col h-full">
+                      <dt className="flex items-center gap-x-3 text-base font-semibold leading-7">
+                        <feature.icon className="h-5 w-5 flex-none text-purple-300" aria-hidden="true" />
+                        {feature.title}
+                      </dt>
+                      <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-purple-100">
+                        <p className="flex-auto">{feature.description}</p>
+                      </dd>
+                      <div className="mt-6">
+                        <SignInButton mode="modal">
+                          <Button className="w-full bg-white text-purple-900 hover:bg-purple-100">
+                            Learn More <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </SignInButton>
+                      </div>
+                    </div>
+                  </MagicCard>
+                ))}
+              </div>
+            </motion.section>
+
+            <motion.section 
+              className="mb-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+            >
+              <NeonGradientCard
+                className="w-full"
+                borderSize={3}
+                borderRadius={16}
+                neonColors={{ firstColor: "#8B5CF6", secondColor: "#6366F1" }}
+              >
+                <div className="p-8">
+                  <h3 className="text-2xl font-bold text-center mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 animate-pulse">
+                    Start Your Savings Journey
+                  </h3>
+                  <p className="text-center mb-6">
+                    Sign in now to access our full range of savings tools and start building your financial future with smart, goal-oriented savings strategies.
+                  </p>
+                  <div className="flex justify-center">
+                    <SignInButton mode="modal">
+                      <RainbowButton>
+                        Sign In to Start Saving
+                      </RainbowButton>
+                    </SignInButton>
+                  </div>
+                </div>
+              </NeonGradientCard>
+            </motion.section>
+          </>
         )}
       </main>
 

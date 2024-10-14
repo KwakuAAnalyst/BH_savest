@@ -1,94 +1,115 @@
+"use client"
+
 import { Check } from "lucide-react"
-import { Button } from "@/app/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card"
+import { Switch } from "@/app/components/ui/switch"
+import { useState } from "react"
+import ShimmerButton from "@/app/components/ui/shimmer-button"
 
 const tiers = [
   {
     name: 'Basic',
     price: 'Free',
-    description: 'Perfect for beginners looking to start their financial journey.',
+    description: 'A basic plan for startups and individual users',
     features: [
-      'Core Savings & Investment Tools',
-      'Automated Savings',
-      'Goal Tracking (up to 3 goals)',
-      'Basic Analytics',
-      'Basic Support (24-48h response)',
-      'Mobile Access',
+      'AI-powered analytics',
+      'Basic support',
+      '5 projects limit',
+      'Access to basic AI tools',
     ],
-    cta: 'Start for Free',
+    cta: 'Try for Free',
   },
   {
-    name: 'Pro',
-    price: 29,
-    description: 'Ideal for experienced users looking to grow their wealth.',
+    name: 'Premium',
+    price: 20,
+    description: 'A premium plan for growing businesses',
     features: [
-      'Advanced Investment Options',
-      'Automated Portfolio Rebalancing',
-      'Staking & Passive Income',
-      'Unlimited Custom Savings Goals',
-      'In-Depth Analytics & Reports',
-      'Priority Support (12h response)',
-      'Exclusive Webinars & Tutorials',
+      'Advanced AI insights',
+      'Priority support',
+      'Unlimited projects',
+      'Access to all AI tools',
+      'Custom integrations',
     ],
-    cta: 'Upgrade to Pro',
+    cta: 'Subscribe',
     highlighted: true,
   },
   {
     name: 'Enterprise',
-    price: 'Custom',
-    description: 'For high-net-worth individuals and businesses.',
+    price: 50,
+    description: 'An enterprise plan with advanced features for large organizations',
     features: [
-      'Full Investment Suite',
-      'Dedicated Financial Advisor',
-      'Custom Portfolio Strategies',
-      'Enhanced Staking & Yield Farming',
-      'Team Management (Business Accounts)',
-      'Enterprise-Level Analytics',
-      'White-Glove 24/7 Support',
-      'Custom Integrations & API Access',
+      'Custom AI solutions',
+      '24/7 dedicated support',
+      'Unlimited projects',
+      'Access to all AI tools',
+      'Custom integrations',
+      'Data security and compliance',
     ],
     cta: 'Contact Sales',
   },
 ]
 
 export default function PricingSection() {
+  const [isAnnual, setIsAnnual] = useState(false)
+
   return (
     <section className="bg-background py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center lg:max-w-4xl">
           <h2 className="text-base font-semibold leading-7 text-primary">Pricing</h2>
           <p className="mt-2 text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-            Choose the right plan for your financial goals
+            Simple pricing for everyone.
           </p>
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-muted-foreground">
-          From beginners to advanced investors, we have a plan that fits your needs. Start your journey to financial freedom today.
+          Choose an affordable plan that's packed with the best features for engaging your audience, creating customer loyalty, and driving sales.
         </p>
+        <div className="mt-16 flex justify-center items-center space-x-4">
+          <span className={`text-sm ${!isAnnual ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>Monthly</span>
+          <Switch
+            checked={isAnnual}
+            onCheckedChange={setIsAnnual}
+          />
+          <span className={`text-sm ${isAnnual ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>Annual</span>
+          {isAnnual && (
+            <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+              2 MONTHS FREE
+            </span>
+          )}
+        </div>
         <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {tiers.map((tier) => (
             <Card key={tier.name} className={`flex flex-col ${tier.highlighted ? 'border-primary shadow-lg' : ''}`}>
               <CardHeader>
-                <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
-                <CardDescription className="text-muted-foreground">{tier.description}</CardDescription>
+                <CardTitle className="text-xl font-semibold">{tier.name}</CardTitle>
+                <CardDescription className="text-sm text-muted-foreground">{tier.description}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
-                <p className="text-4xl font-bold">
-                  {tier.price}
-                  {tier.price !== 'Free' && tier.price !== 'Custom' && <span className="text-base font-normal text-muted-foreground">/month</span>}
+                <p className="text-3xl font-bold">
+                  {tier.price === 'Free' ? 'Free' : (
+                    <>
+                      ${isAnnual ? (tier.price as number) * 10 : tier.price}
+                      <span className="text-base font-normal text-muted-foreground">/{isAnnual ? 'year' : 'month'}</span>
+                    </>
+                  )}
                 </p>
-                <ul className="mt-6 space-y-4">
+                <ul className="mt-6 space-y-3">
                   {tier.features.map((feature) => (
-                    <li key={feature} className="flex items-center">
-                      <Check className="h-5 w-5 text-primary mr-2" />
+                    <li key={feature} className="flex items-center text-sm">
+                      <Check className="h-5 w-5 text-purple-300 mr-2 flex-shrink-0" />
                       <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
               </CardContent>
               <CardFooter className="mt-auto">
-                <Button className="w-full" variant={tier.highlighted ? "default" : "outline"}>
+                <ShimmerButton
+                  className="w-full text-white"
+                  background="linear-gradient(to bottom right, #4c1d95, #312e81)" // Dark purple to indigo gradient
+                  shimmerColor="rgba(255, 255, 255, 0.2)"
+                >
                   {tier.cta}
-                </Button>
+                </ShimmerButton>
               </CardFooter>
             </Card>
           ))}

@@ -1,5 +1,4 @@
 import { 
-  PiggyBank, 
   TrendingUp, 
   Vote, 
   BookOpen,
@@ -7,13 +6,10 @@ import {
   Zap,
   Users
 } from 'lucide-react'
+import { DotPattern } from './ui/dot-pattern'
+import { MagicCard } from './ui/magic-card'
 
 const features = [
-  {
-    name: 'Smart Savings',
-    description: 'Supercharge your savings with AI-driven strategies and high-yield accounts that make your money work harder for you.',
-    icon: PiggyBank,
-  },
   {
     name: 'Diversified Investments',
     description: 'Access a world of investment opportunities tailored to your goals, risk tolerance, and values.',
@@ -48,31 +44,42 @@ const features = [
 
 export default function FeaturesSection() {
   return (
-    <section className="bg-gray-100 dark:bg-gray-800 py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+    <section className="relative py-24 sm:py-32 overflow-hidden">
+      {/* DotPattern background */}
+      <div className="absolute inset-0 z-0">
+        <DotPattern width={32} height={32} cx={16} cy={16} cr={2} className="text-primary/20" />
+      </div>
+      
+      <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:text-center">
           <h2 className="text-base font-semibold leading-7 text-primary">Revolutionize Your Finances</h2>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <p className="mt-2 text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
             Unlock Your Financial Potential
           </p>
-          <p className="mt-6 text-lg leading-8 text-muted-foreground">
-            BlockHolder empowers you to take control of your financial future with cutting-edge tools, education, and opportunities.
-          </p>
         </div>
+        <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-muted-foreground">
+          BlockHolder empowers you to take control of your financial future with cutting-edge tools, education, and opportunities.
+        </p>
         <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
-          <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             {features.map((feature) => (
-              <div key={feature.name} className="flex flex-col">
-                <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-foreground">
-                  <feature.icon className="h-5 w-5 flex-none text-primary" aria-hidden="true" />
-                  {feature.name}
-                </dt>
-                <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-muted-foreground">
-                  <p className="flex-auto">{feature.description}</p>
-                </dd>
-              </div>
+              <MagicCard 
+                key={feature.name} 
+                className="p-6 bg-gradient-to-br from-purple-900 to-indigo-900 text-white"
+                gradientColor="rgba(255, 255, 255, 0.1)"
+              >
+                <div className="flex flex-col h-full">
+                  <dt className="flex items-center gap-x-3 text-base font-semibold leading-7">
+                    <feature.icon className="h-5 w-5 flex-none text-purple-300" aria-hidden="true" />
+                    {feature.name}
+                  </dt>
+                  <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-purple-100">
+                    <p className="flex-auto">{feature.description}</p>
+                  </dd>
+                </div>
+              </MagicCard>
             ))}
-          </dl>
+          </div>
         </div>
       </div>
     </section>

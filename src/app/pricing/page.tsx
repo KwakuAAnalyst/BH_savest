@@ -1,18 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Progress } from "@/app/components/ui/progress";
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import { useUser, SignInButton } from '@clerk/nextjs';
-import { CreditCard, Calendar, AlertCircle, Download, Gift, Users, Check, Copy, Share2, Twitter, Facebook, Linkedin } from 'lucide-react';
+import { CreditCard, Calendar, AlertCircle, Download, Gift, Users, Check, Copy, Share2, Twitter, Facebook, Linkedin, ChevronDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
 import { Input } from "@/app/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
 import { Label } from "@/app/components/ui/label";
+import WordPullUp from "@/app/components/ui/word-pull-up";
+import { Switch } from "@/app/components/ui/switch";
+import { MagicCard } from "@/app/components/ui/magic-card";
+import ShimmerButton from "@/app/components/ui/shimmer-button";
 
 const planData = [
   {
@@ -87,12 +91,96 @@ const faqData = [
   }
 ];
 
+interface FAQItemProps {
+  question: string;
+  answer: string;
+}
+
+const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="border border-gray-200 rounded-lg mb-4">
+      <button
+        className="flex justify-between items-center w-full p-4 text-left"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className="text-lg font-semibold">{question}</span>
+        <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${isOpen ? 'transform rotate-180' : ''}`} />
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="px-4 pb-4"
+          >
+            <p className="text-gray-600">{answer}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const tiers = [
+  {
+    name: 'Basic',
+    price: 'Free',
+    description: 'Perfect for users looking to dip their toes into savings and investments with simple tools and automation.',
+    features: [
+      'Core Savings & Investment Tools',
+      'Automated Savings',
+      'Goal Tracking (up to 3 goals)',
+      'Basic Analytics',
+      'Basic Support (24-48 hour response time)',
+      'Mobile Access'
+    ],
+    cta: 'Try for Free',
+  },
+  {
+    name: 'Pro',
+    price: 29.99,
+    description: 'Ideal for users who are ready to make more informed financial decisions and actively grow their wealth through advanced tools and insights.',
+    features: [
+      'Advanced Investment Options',
+      'Automated Portfolio Rebalancing',
+      'Staking & Passive Income',
+      'Custom Savings Goals',
+      'In-Depth Analytics & Reports',
+      'Priority Support',
+      'Exclusive Webinars & Tutorials'
+    ],
+    cta: 'Subscribe',
+    highlighted: true,
+  },
+  {
+    name: 'Enterprise',
+    price: 99.99,
+    description: 'Designed for high-net-worth individuals or businesses looking for comprehensive financial management solutions.',
+    features: [
+      'Full Investment Suite',
+      'Dedicated Financial Advisor',
+      'Custom Portfolio Strategies',
+      'Enhanced Staking & Yield Farming',
+      'Team Management (Business Accounts)',
+      'Enterprise-Level Analytics',
+      'White-Glove Support',
+      'Custom Integrations & API Access'
+    ],
+    cta: 'Contact Sales',
+  },
+];
+
 export default function PricingPage() {
   const { isSignedIn, user } = useUser();
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
   const [newPaymentMethod, setNewPaymentMethod] = useState('credit_card');
+  const [isAnnual, setIsAnnual] = useState(false);
 
   const referralLink = `https://blockholder.com/?ref=${user?.id}`;
 
@@ -374,13 +462,11 @@ export default function PricingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <h1 className="text-5xl font-bold mb-6">Choose the Right Plan for You</h1>
+              <WordPullUp 
+                words="Choose the Right Plan for You"
+                className="text-5xl font-bold mb-6"
+              />
               <p className="text-xl mb-8 text-muted-foreground">Unlock premium features and take control of your financial future.</p>
-              <SignInButton mode="modal">
-                <Button size="lg">
-                  Sign In to View Plans
-                </Button>
-              </SignInButton>
             </motion.section>
 
             <motion.section 
@@ -389,30 +475,77 @@ export default function PricingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {planData.map((plan, index) => (
-                  <Card key={plan.name} className="flex flex-col">
-                    <CardHeader>
-                      <CardTitle>{plan.name}</CardTitle>
-                      <CardDescription>{plan.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-grow">
-                      <ul className="space-y-2">
-                        {plan.features.map((feature, index) => (
-                          <li key={index} className="flex items-center">
-                            <Check className="h-5 w-5 text-primary mr-2" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                    <CardFooter>
-                      <Button className="w-full">Choose {plan.name}</Button>
-                    </CardFooter>
-                  </Card>
+              <div className="mx-auto max-w-2xl text-center lg:max-w-4xl mb-8">
+                <h2 className="text-base font-semibold leading-7 text-primary">Pricing</h2>
+                <p className="mt-2 text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+                  Simple pricing for everyone.
+                </p>
+                <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-muted-foreground">
+                  Choose an affordable plan that's packed with the best features for engaging your audience, creating customer loyalty, and driving financial growth.
+                </p>
+              </div>
+
+              <div className="mt-8 flex justify-center items-center space-x-4">
+                <span className={`text-sm ${!isAnnual ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>Monthly</span>
+                <Switch
+                  checked={isAnnual}
+                  onCheckedChange={setIsAnnual}
+                />
+                <span className={`text-sm ${isAnnual ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>Annual</span>
+                {isAnnual && (
+                  <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                    2 MONTHS FREE
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                {tiers.map((tier) => (
+                  <MagicCard 
+                    key={tier.name} 
+                    className={`flex flex-col ${tier.highlighted ? 'border-primary shadow-lg' : ''}`}
+                    gradientColor="rgba(124, 58, 237, 0.2)" // Purple color with low opacity
+                  >
+                    <div className="flex flex-col h-full">
+                      <CardHeader>
+                        <CardTitle className="text-xl font-semibold">{tier.name}</CardTitle>
+                        <CardDescription className="text-sm text-muted-foreground">{tier.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex-grow">
+                        <p className="text-3xl font-bold mb-6">
+                          {tier.price === 'Free' ? 'Free' : (
+                            <>
+                              ${isAnnual ? (tier.price as number) * 10 : tier.price}
+                              <span className="text-base font-normal text-muted-foreground">/{isAnnual ? 'year' : 'month'}</span>
+                            </>
+                          )}
+                        </p>
+                        <ul className="space-y-3">
+                          {tier.features.map((feature) => (
+                            <li key={feature} className="flex items-center text-sm">
+                              <Check className="h-5 w-5 text-primary mr-2 flex-shrink-0" />
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                      <CardFooter className="mt-auto">
+                        <ShimmerButton
+                          className="w-full text-white"
+                          background="linear-gradient(to bottom right, #4c1d95, #312e81)"
+                          shimmerColor="rgba(255, 255, 255, 0.2)"
+                        >
+                          {tier.cta}
+                        </ShimmerButton>
+                      </CardFooter>
+                    </div>
+                  </MagicCard>
                 ))}
               </div>
             </motion.section>
+
+            {/* Page break */}
+            <div className="w-full border-t border-gray-200 my-16"></div>
 
             <motion.section 
               className="mb-12"
@@ -420,17 +553,11 @@ export default function PricingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
             >
-              <h2 className="text-3xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
-              <div className="space-y-6">
+              <h2 className="text-4xl font-bold mb-2 text-center">FAQ</h2>
+              <h3 className="text-3xl font-bold mb-8 text-center">Frequently Asked Questions</h3>
+              <div className="max-w-3xl mx-auto">
                 {faqData.map((faq, index) => (
-                  <Card key={index}>
-                    <CardHeader>
-                      <CardTitle className="text-xl">{faq.question}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p>{faq.answer}</p>
-                    </CardContent>
-                  </Card>
+                  <FAQItem key={index} question={faq.question} answer={faq.answer} />
                 ))}
               </div>
             </motion.section>

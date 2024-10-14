@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Menu } from 'lucide-react'
 import { Button } from "@/app/components/ui/button"
@@ -10,6 +11,7 @@ import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@cl
 import { useConnect, useAccount, useDisconnect } from 'wagmi'
 import { coinbaseWallet } from 'wagmi/connectors'
 import { WalletComponents } from './Wallet'
+
 const navigation = [
   { name: 'Save', href: '/save' },
   { name: 'Invest', href: '/invest' },
@@ -32,11 +34,13 @@ export default function Header() {
           {/* Logo (Left) */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center">
-              <span className="sr-only">Your Company</span>
-              <svg className="h-8 w-auto text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M16 12l-4-4-4 4M12 16V9" />
-              </svg>
+              <span className="sr-only">BlockHolder</span>
+              <Image 
+                src="/blocks.png" 
+                alt="BlockHolder Logo" 
+                width={200} 
+                height={32}
+              />
             </Link>
           </div>
 
@@ -68,11 +72,6 @@ export default function Header() {
             <SignedIn>
               <UserButton afterSignOutUrl="/" />
             </SignedIn>
-            {/*{address ? // omitted for brevity
- 
- <WalletComponents /> 
-   : <button onClick={() => connect({ connector: coinbaseWallet() })}>Sign In</button>}*/}
-            
           </div>
 
           {/* Mobile menu button */}

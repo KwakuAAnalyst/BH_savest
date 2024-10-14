@@ -11,12 +11,17 @@ import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import { useUser, SignInButton } from '@clerk/nextjs';
 import { ethers } from 'ethers';
-import { PieChart, Wallet, Vote, Zap, ArrowUpRight, ArrowDownLeft, ChevronDown, ChevronUp, History, RefreshCw, Check } from 'lucide-react';
+import { PieChart, Wallet, Vote, Zap, ArrowUpRight, ArrowDownLeft, ChevronDown, ChevronUp, History, RefreshCw, Check, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
-import { ScrollArea } from "@/app/components/ui/scroll-area";
-import TransactionHistory from "@/app/components/TransactionHistory";
-
+import { Progress } from "@/app/components/ui/progress";
 import EthStaking from "@/app/abi/EthStaking.json";
+import { MagicCard } from "@/app/components/ui/magic-card";
+import { cn } from "@/lib/utils";
+import ShineBorder from "@/app/components/ui/shine-border";
+import WordPullUp from "@/app/components/ui/word-pull-up";
+import { NeonGradientCard } from "@/app/components/ui/neon-gradient-card";
+import { RainbowButton } from "@/app/components/ui/rainbow-button";
+
 const contractAddress = "0x42a0bd840bc220e64bb4a1710bafb4e1340e3829"; // Your contract address
 const contractABI = EthStaking;
 
@@ -24,21 +29,19 @@ export default function EarnPage() {
   const { isSignedIn, user } = useUser();
   const [isStakeOpen, setIsStakeOpen] = useState(false);
   const [stakeAmount, setStakeAmount] = useState('');
-  const [isTransactionHistoryExpanded, setIsTransactionHistoryExpanded] = useState(false);
   const [isUnstakeOpen, setIsUnstakeOpen] = useState(false);
   const [unstakeAmount, setUnstakeAmount] = useState('');
   const [isClaimRewardsOpen, setIsClaimRewardsOpen] = useState(false);
   const [claimAmount, setClaimAmount] = useState('');
   const [isProposalsOpen, setIsProposalsOpen] = useState(false);
   const [stakedBalance, setStakedBalance] = useState("0.000000");
-  const [stakeError, setStakeError] = useState(''); // Error for staking
-  const [unstakeError, setUnstakeError] = useState(''); // Error for unstaking
-  const [isStakeErrorOpen, setIsStakeErrorOpen] = useState(false); // Control for stake error pop-up
-  const [isUnstakeErrorOpen, setIsUnstakeErrorOpen] = useState(false); // Control for unstake error pop-up
-  const [stakeSuccess, setStakeSuccess] = useState(''); // Success message for staking
-  const [unstakeSuccess, setUnstakeSuccess] = useState(''); // Success message for unstaking
+  const [stakeError, setStakeError] = useState('');
+  const [unstakeError, setUnstakeError] = useState('');
+  const [isStakeErrorOpen, setIsStakeErrorOpen] = useState(false);
+  const [isUnstakeErrorOpen, setIsUnstakeErrorOpen] = useState(false);
+  const [stakeSuccess, setStakeSuccess] = useState('');
+  const [unstakeSuccess, setUnstakeSuccess] = useState('');
 
-  // Mock data for the dashboard
   const [earningData, setEarningData] = useState({
     tvl: 1000000,
     currentApy: 90,
@@ -70,14 +73,12 @@ export default function EarnPage() {
     { id: 4, title: "Reduce unstaking period to 24 hours", votes: 2100, hasVoted: false },
   ]);
 
-  // Fetch staked balance on page load
   useEffect(() => {
     if (isSignedIn && user && user.primaryEmailAddress) {
       fetchStakedBalance();
     }
   }, [isSignedIn, user]);
 
-  // Updated fetchStakedBalance function using getTotalBalance
   const fetchStakedBalance = async () => {
     try {
       if (!window.ethereum) {
@@ -88,10 +89,7 @@ export default function EarnPage() {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(contractAddress, contractABI, signer);
   
-      // Fetch the user's wallet address
       const walletAddress = await signer.getAddress();
-  
-      // Call the getTotalBalance function using the wallet address
       const totalBalance = await contract.getTotalBalance(walletAddress); 
       const formattedStakedBalance = ethers.formatEther(totalBalance).toString();
   
@@ -100,7 +98,6 @@ export default function EarnPage() {
       console.error("Failed to fetch staked balance:", error);
     }
   };
-  
 
   const handleStake = async () => {
     try {
@@ -155,7 +152,7 @@ export default function EarnPage() {
       console.error("Failed to stake:", error);
     }
   };
-  
+
   const handleUnstake = async () => {
     setIsUnstakeOpen(false); // Close modal immediately
     try {
@@ -195,17 +192,13 @@ export default function EarnPage() {
       }
     }
   };
-  
+
   const handleClaimRewards = async () => {
     const amount = parseFloat(claimAmount);
     if (!isNaN(amount) && amount > 0 && amount <= earningData.accumulatedRewards) {
       setClaimAmount('');
       setIsClaimRewardsOpen(false); // Close the claim rewards modal
     }
-  };
-
-  const toggleTransactionHistory = () => {
-    setIsTransactionHistoryExpanded(!isTransactionHistoryExpanded);
   };
 
   const handleVote = (proposalId: number) => {
@@ -225,8 +218,11 @@ export default function EarnPage() {
       <main className="flex-grow container mx-auto px-4 py-8">
         {isSignedIn ? (
           <div>
-            <h1 className="text-4xl font-bold mb-6 text-center">Your Earning Dashboard</h1>
-            <p className="text-xl mb-8 text-center">Welcome to your personalized earning dashboard, {user?.firstName}.</p>
+            <WordPullUp 
+              words="Your Earning Dashboard"
+              className="text-4xl font-bold mb-6 text-center"
+            />
+            <p className="text-xl mb-8 text-center">Welcome to your personalized earning dashboard, {user.firstName}.</p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <Card>
@@ -238,7 +234,7 @@ export default function EarnPage() {
                 <CardContent>
                   <p className="text-2xl font-bold">Total Staked: {stakedBalance} ETH</p>
                   <p className="text-xl">TVL: ${earningData.tvl.toLocaleString()}</p>
-                  <p className="text-lg text-green-500">Current Lock Days: {earningData.currentApy}</p>
+                  <p className="text-lg text-green-500">Current APY: {earningData.currentApy}%</p>
                 </CardContent>
                 <CardFooter className="flex justify-between">
                   <Dialog open={isStakeOpen} onOpenChange={setIsStakeOpen}>
@@ -266,52 +262,27 @@ export default function EarnPage() {
                           />
                         </div>
                       </div>
-                      {/* Pop-up for Stake Error */}
-                      {/* Pop-up for Stake Error */}
-                  <Dialog open={isStakeErrorOpen} onOpenChange={setIsStakeErrorOpen}>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>Error</DialogTitle>
-                        <DialogDescription>{stakeError}</DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter>
-                        <Button onClick={() => setIsStakeErrorOpen(false)}>Close</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
                       <DialogFooter>
                         <Button onClick={handleStake}>Confirm Stake</Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
-                  {/* Pop-up for Unstake Error */}
-                    <Dialog open={isUnstakeErrorOpen} onOpenChange={setIsUnstakeErrorOpen}>
-                      <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                          <DialogTitle>Error</DialogTitle>
-                          <DialogDescription>{unstakeError}</DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                          <Button onClick={() => setIsUnstakeErrorOpen(false)}>Close</Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
 
                   <Dialog open={isUnstakeOpen} onOpenChange={setIsUnstakeOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline"><ArrowDownLeft className="mr-2" /> Unstake</Button>
-                        </DialogTrigger>
-                          <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader>
-                              <DialogTitle>Unstake Assets</DialogTitle>
-                                <DialogDescription>
-                                  Are you sure you want to unstake your assets? Click confirm to proceed.
-                                </DialogDescription>
-                                    </DialogHeader>
-                            <DialogFooter>
-                                    <Button onClick={handleUnstake}>Confirm Unstake</Button>
-                             </DialogFooter>
-                                </DialogContent>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Unstake Assets</DialogTitle>
+                        <DialogDescription>
+                          Are you sure you want to unstake your assets? Click confirm to proceed.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter>
+                        <Button onClick={handleUnstake}>Confirm Unstake</Button>
+                      </DialogFooter>
+                    </DialogContent>
                   </Dialog>
                 </CardFooter>
               </Card>
@@ -383,7 +354,7 @@ export default function EarnPage() {
                           Review and vote on active governance proposals.
                         </DialogDescription>
                       </DialogHeader>
-                      <ScrollArea className="h-[300px] w-full pr-4">
+                      <div className="h-[300px] overflow-y-auto pr-4">
                         {proposals.map((proposal) => (
                           <div key={proposal.id} className="mb-4 p-4 border rounded-lg">
                             <h3 className="font-semibold mb-2">{proposal.title}</h3>
@@ -398,7 +369,7 @@ export default function EarnPage() {
                             </div>
                           </div>
                         ))}
-                      </ScrollArea>
+                      </div>
                       <DialogFooter>
                         <Button onClick={() => setIsProposalsOpen(false)}>Close</Button>
                       </DialogFooter>
@@ -440,7 +411,7 @@ export default function EarnPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {earningData.transactions.slice(0, isTransactionHistoryExpanded ? undefined : 4).map((transaction, index) => (
+                        {earningData.transactions.map((transaction, index) => (
                           <tr key={index} className="border-b last:border-b-0">
                             <td className="py-2 px-4">{transaction.type}</td>
                             <td className="py-2 px-4 text-right">${transaction.amount}</td>
@@ -453,21 +424,7 @@ export default function EarnPage() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={toggleTransactionHistory}
-                  >
-                    {isTransactionHistoryExpanded ? (
-                      <>
-                        <ChevronUp className="mr-2 h-4 w-4" /> Show Less
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="mr-2 h-4 w-4" /> View All Transactions
-                      </>
-                    )}
-                  </Button>
+                  <Button variant="outline" className="w-full">View All Transactions</Button>
                 </CardFooter>
               </Card>
             </div>
@@ -476,7 +433,7 @@ export default function EarnPage() {
             {stakeSuccess && <p className="text-green-500 text-center mt-4">{stakeSuccess}</p>}
             {unstakeSuccess && <p className="text-green-500 text-center mt-4">{unstakeSuccess}</p>}
 
-            {/* Pop-up for Stake Error */}
+            {/* Error Dialogs */}
             <Dialog open={isStakeErrorOpen} onOpenChange={setIsStakeErrorOpen}>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
@@ -489,7 +446,6 @@ export default function EarnPage() {
               </DialogContent>
             </Dialog>
 
-            {/* Pop-up for Unstake Error */}
             <Dialog open={isUnstakeErrorOpen} onOpenChange={setIsUnstakeErrorOpen}>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
@@ -511,12 +467,13 @@ export default function EarnPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <h1 className="text-5xl font-bold mb-6">Earn More with Staking and Governance</h1>
+              <WordPullUp 
+                words="Earn More with Staking and Governance"
+                className="text-5xl font-bold mb-6"
+              />
               <p className="text-xl mb-8 text-muted-foreground">Maximize your crypto holdings through staking rewards and participate in platform governance.</p>
               <SignInButton mode="modal">
-                <Button size="lg">
-                  Sign In to Earn
-                </Button>
+                <Button size="lg">Sign In to Earn</Button>
               </SignInButton>
             </motion.section>
 
@@ -527,23 +484,31 @@ export default function EarnPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               <div className="flex flex-col md:flex-row items-center gap-8">
-                <Card className="w-full md:w-1/2">
-                  <CardHeader>
-                    <CardTitle className="text-2xl font-bold text-center">Why Earn with Us?</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="list-none space-y-2 text-muted-foreground">
-                      <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> High-yield staking opportunities</li>
-                      <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Participate in platform governance</li>
-                      <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Automated compounding</li>
-                      <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Flexible lock-up periods</li>
-                      <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Real-time reward tracking</li>
-                    </ul>
-                  </CardContent>
-                </Card>
+                <ShineBorder 
+                  borderRadius={8}
+                  borderWidth={1}
+                  duration={10}
+                  color={["#8B5CF6", "#6366F1", "#4F46E5"]}
+                  className="w-full md:w-1/2"
+                >
+                  <Card className="w-full bg-transparent border-none shadow-none">
+                    <CardHeader>
+                      <CardTitle className="text-2xl font-bold text-center">Why Earn with Us?</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="list-none space-y-2 text-muted-foreground">
+                        <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> High-yield staking opportunities</li>
+                        <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Participate in platform governance</li>
+                        <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Automated compounding</li>
+                        <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Flexible lock-up periods</li>
+                        <li className="flex items-center"><Check className="h-5 w-5 text-primary mr-2" /> Real-time reward tracking</li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </ShineBorder>
                 <div className="w-full md:w-1/2">
                   <Image
-                    src="/stake.jpg"
+                    src="/7532619.jpg"
                     alt="Earn with BlockHolder"
                     width={800}
                     height={600}
@@ -561,22 +526,45 @@ export default function EarnPage() {
             >
               <h2 className="text-3xl font-bold mb-8 text-center">Earning Options</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {['Staking', 'Governance', 'Yield Farming'].map((option, index) => (
-                  <Card key={option}>
-                    <CardHeader>
-                      <CardTitle>{option}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription>
-                        Learn how {option.toLowerCase()} can help you maximize your returns and participate in the platform's growth.
-                      </CardDescription>
-                    </CardContent>
-                    <CardFooter>
-                      <SignInButton mode="modal">
-                        <Button className="w-full">Learn More</Button>
-                      </SignInButton>
-                    </CardFooter>
-                  </Card>
+                {[
+                  {
+                    title: "Staking",
+                    description: "Earn passive income by locking your assets and securing the network.",
+                    icon: Wallet,
+                  },
+                  {
+                    title: "Governance",
+                    description: "Participate in decision-making and shape the future of the platform.",
+                    icon: Vote,
+                  },
+                  {
+                    title: "Yield Farming",
+                    description: "Maximize returns by providing liquidity to various pools.",
+                    icon: Zap,
+                  },
+                ].map((feature) => (
+                  <MagicCard 
+                    key={feature.title} 
+                    className="p-6 bg-gradient-to-br from-purple-900 to-indigo-900 text-white"
+                    gradientColor="rgba(255, 255, 255, 0.1)"
+                  >
+                    <div className="flex flex-col h-full">
+                      <dt className="flex items-center gap-x-3 text-base font-semibold leading-7">
+                        <feature.icon className="h-5 w-5 flex-none text-purple-300" aria-hidden="true" />
+                        {feature.title}
+                      </dt>
+                      <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-purple-100">
+                        <p className="flex-auto">{feature.description}</p>
+                      </dd>
+                      <div className="mt-6">
+                        <SignInButton mode="modal">
+                          <Button className="w-full bg-white text-purple-900 hover:bg-purple-100">
+                            Learn More <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </SignInButton>
+                      </div>
+                    </div>
+                  </MagicCard>
                 ))}
               </div>
             </motion.section>
@@ -587,23 +575,28 @@ export default function EarnPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.6 }}
             >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-center">Start Your Earning Journey</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-center">
+              <NeonGradientCard
+                className="w-full"
+                borderSize={3}
+                borderRadius={16}
+                neonColors={{ firstColor: "#8B5CF6", secondColor: "#6366F1" }}
+              >
+                <div className="p-8">
+                  <h3 className="text-2xl font-bold text-center mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 animate-pulse">
+                    Start Your Earning Journey
+                  </h3>
+                  <p className="text-center mb-6">
                     Sign in now to access our full range of earning tools and start maximizing your crypto returns through staking, governance, and yield farming.
-                  </CardDescription>
-                </CardContent>
-                <CardFooter className="flex justify-center">
-                  <SignInButton mode="modal">
-                    <Button size="lg">
-                      Sign In to Start Earning
-                    </Button>
-                  </SignInButton>
-                </CardFooter>
-              </Card>
+                  </p>
+                  <div className="flex justify-center">
+                    <SignInButton mode="modal">
+                      <RainbowButton>
+                        Sign In to Start Earning
+                      </RainbowButton>
+                    </SignInButton>
+                  </div>
+                </div>
+              </NeonGradientCard>
             </motion.section>
           </>
         )}

@@ -3,17 +3,17 @@ import HeroSection from './components/HeroSection'
 import PricingSection from './components/PricingSection'
 import Header from './components/Header'
 import Footer from './components/Footer'
+import { StatsSection } from './components/StatsSection'
 
 export default function Home() {
   return (
     <main>
-      {/* Other components */}
       <Header />
       <HeroSection />
       <FeaturesSection />
+      <StatsSection />
       <PricingSection />
       <Footer />
-      {/* Other components */}
     </main>
   )
 }
