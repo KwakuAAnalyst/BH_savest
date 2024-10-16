@@ -21,6 +21,7 @@ import ShineBorder from "@/app/components/ui/shine-border";
 import WordPullUp from "@/app/components/ui/word-pull-up";
 import { NeonGradientCard } from "@/app/components/ui/neon-gradient-card";
 import { RainbowButton } from "@/app/components/ui/rainbow-button";
+import TransactionHistory from '@/app/components/TransactionHistory'; // Importing TransactionHistory component
 
 const contractAddress = "0x42a0bd840bc220e64bb4a1710bafb4e1340e3829"; // Your contract address
 const contractABI = EthStaking;
@@ -41,6 +42,7 @@ export default function EarnPage() {
   const [isUnstakeErrorOpen, setIsUnstakeErrorOpen] = useState(false);
   const [stakeSuccess, setStakeSuccess] = useState('');
   const [unstakeSuccess, setUnstakeSuccess] = useState('');
+  const [account, setAccount] = useState<string | null>(null); // Store wallet address
 
   const [earningData, setEarningData] = useState({
     tvl: 1000000,
@@ -58,12 +60,6 @@ export default function EarnPage() {
     currentTier: "Silver",
     nextTier: "Gold",
     portfolioGrowth: 18.5,
-    transactions: [
-      { type: "Stake", amount: 1000, date: "2023-05-15", pool: "30-day lock" },
-      { type: "Reward", amount: 50, date: "2023-05-14", pool: "90-day lock" },
-      { type: "Unstake", amount: 500, date: "2023-05-10", pool: "30-day lock" },
-      { type: "Stake", amount: 2000, date: "2023-05-01", pool: "90-day lock" },
-    ],
   });
 
   const [proposals, setProposals] = useState([
@@ -90,6 +86,7 @@ export default function EarnPage() {
       const contract = new ethers.Contract(contractAddress, contractABI, signer);
   
       const walletAddress = await signer.getAddress();
+      setAccount(walletAddress); // Store wallet address
       const totalBalance = await contract.getTotalBalance(walletAddress); 
       const formattedStakedBalance = ethers.formatEther(totalBalance).toString();
   
@@ -101,7 +98,6 @@ export default function EarnPage() {
 
   const handleStake = async () => {
     try {
-      // Close the stake modal immediately when the button is clicked
       setIsStakeOpen(false); 
   
       if (!window.ethereum) {
@@ -112,21 +108,16 @@ export default function EarnPage() {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(contractAddress, contractABI, signer);
   
-      // Fetch the user's wallet address
       const walletAddress = await signer.getAddress();
-  
-      // Call the getTotalBalance function using the wallet address to check staked balance
       const totalBalance = await contract.getTotalBalance(walletAddress); 
       const formattedStakedBalance = ethers.formatEther(totalBalance).toString();
   
-      // If the user already has staked assets, show error and prevent staking
       if (parseFloat(formattedStakedBalance) > 0) {  
         setStakeError('Please unstake your currently staked assets to stake again.');
         setIsStakeErrorOpen(true);
         return;
       }
   
-      // Proceed with staking if the balance is zero
       const amount = parseFloat(stakeAmount);
       if (isNaN(amount) || amount <= 0) {
         setStakeError('Please enter a valid amount to stake.');
@@ -135,28 +126,27 @@ export default function EarnPage() {
       }
   
       const tx = await contract.stake({
-        value: ethers.parseEther(stakeAmount) // Convert amount to wei and send it to the stake function
+        value: ethers.parseEther(stakeAmount)
       });
       
-      await tx.wait(); // Wait for the transaction to be confirmed
+      await tx.wait(); 
       console.log('Staked successfully:', tx);
-      fetchStakedBalance(); // Refresh the staked balance
+      fetchStakedBalance(); 
   
       setStakeAmount('');
-      // Show success message
       setStakeSuccess('Stake successful!');
       setTimeout(() => {
         setStakeSuccess('');
-      }, 3000); // Hide after 3 seconds
+      }, 3000);
     } catch (error) {
       console.error("Failed to stake:", error);
     }
   };
 
   const handleUnstake = async () => {
-    setIsUnstakeOpen(false); // Close modal immediately
+    setIsUnstakeOpen(false); 
     try {
-      setUnstakeError(''); // Clear any previous errors
+      setUnstakeError(''); 
   
       if (!window.ethereum) {
         throw new Error('MetaMask is not installed. Please install MetaMask and try again.');
@@ -166,22 +156,19 @@ export default function EarnPage() {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(contractAddress, contractABI, signer);
   
-      // Call the unstake function without any arguments
       const tx = await contract.unstake(); 
-      await tx.wait(); // Wait for the transaction to be confirmed
+      await tx.wait(); 
       console.log('Unstaked successfully:', tx);
   
-      fetchStakedBalance(); // Refresh the staked balance
+      fetchStakedBalance(); 
   
       setUnstakeSuccess('Unstake successful!');
       setTimeout(() => {
         setUnstakeSuccess('');
-      }, 3000); // Hide after 3 seconds
+      }, 3000); 
     } catch (error: any) {
-      // Directly access the message property from the error object
       const errorMessage = error.message || "An unknown error occurred";
   
-      // Check if the error message includes 'Staking period not complete'
       if (errorMessage.includes('Staking period not complete')) {
         setUnstakeError('You cannot unstake yet. The staking period is not complete.');
         setIsUnstakeErrorOpen(true);
@@ -197,7 +184,7 @@ export default function EarnPage() {
     const amount = parseFloat(claimAmount);
     if (!isNaN(amount) && amount > 0 && amount <= earningData.accumulatedRewards) {
       setClaimAmount('');
-      setIsClaimRewardsOpen(false); // Close the claim rewards modal
+      setIsClaimRewardsOpen(false); 
     }
   };
 
@@ -393,40 +380,9 @@ export default function EarnPage() {
                 </CardFooter>
               </Card>
 
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <History className="mr-2" /> Transaction History
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="py-2 px-4 text-left">Type</th>
-                          <th className="py-2 px-4 text-right">Amount</th>
-                          <th className="py-2 px-4 text-right">Date</th>
-                          <th className="py-2 px-4 text-right">Pool</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {earningData.transactions.map((transaction, index) => (
-                          <tr key={index} className="border-b last:border-b-0">
-                            <td className="py-2 px-4">{transaction.type}</td>
-                            <td className="py-2 px-4 text-right">${transaction.amount}</td>
-                            <td className="py-2 px-4 text-right">{transaction.date}</td>
-                            <td className="py-2 px-4 text-right">{transaction.pool}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full">View All Transactions</Button>
-                </CardFooter>
-              </Card>
+              {/* Transaction History integrated from page 1 */}
+              {account && <TransactionHistory account={account} />} {/* Use account from state */}
+
             </div>
 
             {/* Success messages */}

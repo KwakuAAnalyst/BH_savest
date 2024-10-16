@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { ChevronDown, ChevronUp, History } from 'lucide-react';
+import { ChevronDown, ChevronUp, History, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { formatEther } from 'ethers';
 
 // Define the Transaction type, including the new transactionType field
@@ -114,10 +114,18 @@ export default function TransactionHistory({ account }: TransactionHistoryProps)
     setIsTransactionHistoryExpanded(!isTransactionHistoryExpanded);
   };
 
-  // Limit transactions to 5 if history is not expanded
+  // Limit transactions to 5 initially and show 20 when expanded
   const displayedTransactions = isTransactionHistoryExpanded
-    ? transactions // Display all transactions if expanded
+    ? transactions.slice(0, 20) // Display only the last 20 transactions if expanded
     : transactions.slice(0, 5); // Display only the first 5 transactions if not expanded
+
+  // Helper function to format the timestamp into separate date and time
+  const formatDateTime = (timestamp: string) => {
+    const dateObj = new Date(Number(timestamp) * 1000); // Convert timestamp from seconds to milliseconds
+    const date = dateObj.toLocaleDateString(); // Extract date
+    const time = dateObj.toLocaleTimeString(); // Extract time
+    return { date, time };
+  };
 
   return (
     <Card className="md:col-span-2">
@@ -136,17 +144,29 @@ export default function TransactionHistory({ account }: TransactionHistoryProps)
                 <tr className="border-b">
                   <th className="py-2 px-4 text-left">Transaction Type</th>
                   <th className="py-2 px-4 text-center">Amount (ETH)</th>
-                  <th className="py-2 px-4 text-right">Timestamp</th>
+                  <th className="py-2 px-4 text-right">Date</th>
+                  <th className="py-2 px-4 text-right">Time</th>
                 </tr>
               </thead>
               <tbody>
-                {displayedTransactions.map((tx, index) => (
-                  <tr key={index} className="border-b last:border-b-0">
-                    <td className="py-2 px-4">{tx.transactionType}</td>
-                    <td className="py-2 px-4 text-center">{parseFloat(tx.value).toFixed(4)} ETH</td> {/* Display formatted ETH value */}
-                    <td className="py-2 px-4 text-right">{new Date(Number(tx.timeStamp) * 1000).toLocaleString()}</td>
-                  </tr>
-                ))}
+                {displayedTransactions.map((tx, index) => {
+                  const { date, time } = formatDateTime(tx.timeStamp); // Extract date and time
+                  return (
+                    <tr key={index} className="border-b last:border-b-0">
+                      <td className="py-2 px-4 flex items-center">
+                        {tx.transactionType.includes('Deposit') ? (
+                          <ArrowUpRight className="text-green-500 mr-2" />
+                        ) : tx.transactionType.includes('Withdraw') ? (
+                          <ArrowDownLeft className="text-red-500 mr-2" />
+                        ) : null}
+                        {tx.transactionType}
+                      </td>
+                      <td className="py-2 px-4 text-center">{parseFloat(tx.value).toFixed(4)} ETH</td> {/* Display formatted ETH value */}
+                      <td className="py-2 px-4 text-right">{date}</td> {/* Display the date */}
+                      <td className="py-2 px-4 text-right">{time}</td> {/* Display the time */}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           ) : (
@@ -163,7 +183,7 @@ export default function TransactionHistory({ account }: TransactionHistoryProps)
               </>
             ) : (
               <>
-                <ChevronDown className="mr-2 h-4 w-4" /> View All Transactions
+                <ChevronDown className="mr-2 h-4 w-4" /> View Full 20 Transactions
               </>
             )}
           </Button>

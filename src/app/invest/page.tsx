@@ -3,26 +3,28 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from "@/app/components/ui/button";
-import { CardDescription, Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { Check, Target, BarChart2, Zap, ArrowRight } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import { useUser, SignInButton } from '@clerk/nextjs';
-import { PieChart, Wallet, BarChart2, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownLeft, History, Target, Zap, RefreshCw, Check, ArrowRight } from 'lucide-react';
+import { PieChart, Wallet, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownLeft, History } from 'lucide-react';
 import { ethers } from 'ethers';
-import Image from 'next/image';
+import axios from 'axios'; // To fetch Base Sepolia ETH price
 import { Progress } from "@/app/components/ui/progress";
-import EthInvestment from "@/app/abi/EthInvestment.json";
-import { MagicCard } from "@/app/components/ui/magic-card";
-import { cn } from "@/lib/utils";
-import ShineBorder from "@/app/components/ui/shine-border";
-import WordPullUp from "@/app/components/ui/word-pull-up";
-import { NeonGradientCard } from "@/app/components/ui/neon-gradient-card";
+import EthInvestment from "@/app/abi/EthInvestment.json"; // Your contract ABI
 import { RainbowButton } from "@/app/components/ui/rainbow-button";
+import TransactionHistory from '@/app/components/TransactionHistory';
+import ShineBorder from '@/app/components/ui/shine-border';
+import WordPullUp from '@/app/components/ui/word-pull-up';
+import { NeonGradientCard } from '@/app/components/ui/neon-gradient-card';
+import { MagicCard } from "@/app/components/ui/magic-card";
+import Image from 'next/image';
 
-const contractAddress = "0xcfa367406ad0abb67411f7b72b86863f4949dc15"; // Your contract address
+const contractAddress = "0xcfa367406ad0abb67411f7b72b86863f4949dc15"; // Your Base Sepolia contract address
 const contractABI = EthInvestment;
 
 export default function InvestPage() {
@@ -34,86 +36,75 @@ export default function InvestPage() {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [investSuccess, setInvestSuccess] = useState(false);
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
-  const [investError, setInvestError] = useState('');
-  const [withdrawError, setWithdrawError] = useState('');
-  const [isInvestErrorOpen, setIsInvestErrorOpen] = useState(false);
-  const [isWithdrawErrorOpen, setIsWithdrawErrorOpen] = useState(false);
+  const [totalInvested, setTotalInvested] = useState('0.00000'); // Total invested in Base Sepolia ETH (5 decimals)
+  const [currentValue, setCurrentValue] = useState('0.00'); // Current value in USD
+  const [ethPrice, setEthPrice] = useState(0); // Current Base Sepolia ETH price in USD
+  const [account, setAccount] = useState<string | null>(null); // State for account (wallet address)
 
-  const [investmentData, setInvestmentData] = useState({
-    totalInvested: 50000,
-    currentValue: 62500,
-    totalValue: 62500,
-    roi: 25,
-    portfolios: [
-      { name: "Conservative", risk: "Low", return: "5-8%", allocation: 30 },
-      { name: "Balanced", risk: "Medium", return: "8-12%", allocation: 50 },
-      { name: "Aggressive", risk: "High", return: "12-20%", allocation: 20 },
-    ],
-    transactions: [
-      { type: "Investment", amount: 1000, date: "2023-05-15", portfolio: "Balanced" },
-      { type: "Dividend", amount: 50, date: "2023-05-14", portfolio: "Conservative" },
-      { type: "Withdrawal", amount: 200, date: "2023-05-10", portfolio: "Aggressive" },
-      { type: "Investment", amount: 500, date: "2023-05-01", portfolio: "Balanced" },
-    ],
-    detailedAnalytics: {
-      marketOutperformance: 3.5,
-      diversificationScore: 8.5,
-      riskAssessment: "Moderate",
-      sectorAllocation: [
-        { sector: "Technology", percentage: 30 },
-        { sector: "Finance", percentage: 25 },
-        { sector: "Healthcare", percentage: 20 },
-        { sector: "Consumer Goods", percentage: 15 },
-        { sector: "Energy", percentage: 10 },
-      ],
-      monthlyReturns: [
-        { month: "Jan", return: 2.1 },
-        { month: "Feb", return: 1.8 },
-        { month: "Mar", return: -0.5 },
-        { month: "Apr", return: 3.2 },
-        { month: "May", return: 1.5 },
-      ],
-      topPerformers: [
-        { asset: "AAPL", return: 15.2 },
-        { asset: "MSFT", return: 12.8 },
-        { asset: "AMZN", return: 10.5 },
-      ],
-      underperformers: [
-        { asset: "GE", return: -5.2 },
-        { asset: "XOM", return: -3.8 },
-        { asset: "T", return: -2.5 },
-      ],
-    },
-  });
+  // Function to fetch the user's deposited amount in the contract using `deposits` mapping
+  const fetchUserDeposit = async () => {
+    if (typeof window.ethereum !== 'undefined') {
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum as any);
+        const signer = await provider.getSigner();
+        const contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+        const walletAddress = await signer.getAddress();
+        setAccount(walletAddress);
+
+        // Fetch deposited amount using the `deposits` mapping
+        const deposit = await contract.deposits(walletAddress); // Assuming `deposits` is a public mapping
+        const depositedInWei = deposit.amount; // Assuming `Deposit` struct contains `amount`
+        const depositedInEth = ethers.formatEther(depositedInWei);
+        setTotalInvested(parseFloat(depositedInEth).toFixed(5)); // Display up to 5 decimal places
+
+        // Calculate current value based on ETH price
+        if (ethPrice > 0) {
+          const currentValueInUSD = (parseFloat(depositedInEth) * ethPrice).toFixed(2);
+          setCurrentValue(currentValueInUSD);
+        }
+      } catch (error) {
+        console.error("Error fetching user's deposited amount:", error);
+      }
+    }
+  };
+
+  // Function to fetch the current price of Base Sepolia ETH
+  const fetchBaseSepoliaEthPrice = async () => {
+    try {
+      const response = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+      const price = response.data.ethereum.usd;
+      setEthPrice(price);
+    } catch (error) {
+      console.error("Error fetching Base Sepolia ETH price:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchBaseSepoliaEthPrice(); // Fetch Base Sepolia ETH price on component load
+  }, []);
+
+  useEffect(() => {
+    if (isSignedIn) {
+      fetchUserDeposit(); // Fetch user's deposit once Base Sepolia ETH price is available and user is signed in
+    }
+  }, [ethPrice, isSignedIn]);
 
   const handleInvest = async () => {
     const amount = parseFloat(investAmount);
     if (!isNaN(amount) && amount > 0) {
       try {
-        // Close modal immediately after button click
         setIsInvestOpen(false);
-
         const provider = new ethers.BrowserProvider(window.ethereum as any);
         const signer = await provider.getSigner();
         const contract = new ethers.Contract(contractAddress, contractABI, signer);
-
-        const amountInWei = ethers.parseEther(investAmount); // Convert to Wei
+        const amountInWei = ethers.parseEther(investAmount);
         const tx = await contract.deposit({ value: amountInWei });
-        await tx.wait(); // Wait for the transaction to be mined
-
-        // Only after the transaction is confirmed, display success
-        setInvestmentData(prevData => ({
-          ...prevData,
-          totalInvested: prevData.totalInvested + amount,
-          currentValue: prevData.currentValue + amount,
-          transactions: [
-            { type: "Investment", amount: amount, date: new Date().toISOString().split('T')[0], portfolio: "Balanced" },
-            ...prevData.transactions
-          ]
-        }));
+        await tx.wait();
         setInvestAmount('');
-        setInvestSuccess(true); // Set invest success flag
-        setTimeout(() => setInvestSuccess(false), 3000); // Clear success message after 3 seconds
+        setInvestSuccess(true);
+        setTimeout(() => setInvestSuccess(false), 3000);
+        fetchUserDeposit(); // Refresh total invested after investing
       } catch (error) {
         console.error("Investment failed:", error);
       }
@@ -124,37 +115,19 @@ export default function InvestPage() {
 
   const handleWithdraw = async () => {
     const amount = parseFloat(withdrawAmount);
-    if (!isNaN(amount) && amount > 0 && amount <= investmentData.totalValue) {
+    if (!isNaN(amount) && amount > 0) {
       try {
-        // Close modal immediately after button click
         setIsWithdrawOpen(false);
-
         const provider = new ethers.BrowserProvider(window.ethereum as any);
         const signer = await provider.getSigner();
         const contract = new ethers.Contract(contractAddress, contractABI, signer);
-
-        const amountInWei = ethers.parseEther(withdrawAmount); // Convert to Wei
+        const amountInWei = ethers.parseEther(withdrawAmount);
         const tx = await contract.withdraw(amountInWei);
-        await tx.wait(); // Wait for the transaction to be mined
-
-        // Only after the transaction is confirmed, display success
-        setInvestmentData(prevData => ({
-          ...prevData,
-          totalValue: prevData.totalValue - amount,
-          currentValue: prevData.currentValue - amount,
-          transactions: [
-            {
-              type: "Withdrawal",
-              amount: amount,
-              date: new Date().toISOString().split('T')[0],
-              portfolio: "All"
-            },
-            ...prevData.transactions
-          ]
-        }));
+        await tx.wait();
         setWithdrawAmount('');
-        setWithdrawSuccess(true); // Set withdraw success flag
-        setTimeout(() => setWithdrawSuccess(false), 3000); // Clear success message after 3 seconds
+        setWithdrawSuccess(true);
+        setTimeout(() => setWithdrawSuccess(false), 3000);
+        fetchUserDeposit(); // Refresh total invested after withdrawal
       } catch (error) {
         console.error("Withdrawal failed:", error);
       }
@@ -181,6 +154,7 @@ export default function InvestPage() {
             <p className="text-xl mb-8 text-center">Welcome to your personalized investment dashboard, {user.firstName}.</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Portfolio Overview */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -188,9 +162,9 @@ export default function InvestPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">Total Invested: ${investmentData.totalInvested.toLocaleString()}</p>
-                  <p className="text-xl">Current Value: ${investmentData.currentValue.toLocaleString()}</p>
-                  <p className="text-lg text-green-500">ROI: {investmentData.roi}%</p>
+                  <p className="text-2xl font-bold">Total Invested: {totalInvested} ETH</p> {/* Displayed as "ETH" */}
+                  <p className="text-xl">Current Value: ${currentValue} USD</p>
+                  <p className="text-lg text-green-500">ROI: 25%</p>
                 </CardContent>
                 <CardFooter className="flex justify-between">
                   <Dialog open={isInvestOpen} onOpenChange={setIsInvestOpen}>
@@ -259,6 +233,7 @@ export default function InvestPage() {
                 {withdrawSuccess && <p className="text-green-500 text-center mt-4">Withdrawal successful!</p>}
               </Card>
 
+              {/* Investment Options and Insights */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -266,7 +241,11 @@ export default function InvestPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {investmentData.portfolios.map((portfolio, index) => (
+                  {[
+                    { name: "Conservative", risk: "Low", return: "5-8%", allocation: 30 },
+                    { name: "Balanced", risk: "Medium", return: "8-12%", allocation: 50 },
+                    { name: "Aggressive", risk: "High", return: "12-20%", allocation: 20 },
+                  ].map((portfolio, index) => (
                     <div key={index} className="mb-4">
                       <p className="font-semibold">{portfolio.name}</p>
                       <p className="text-sm text-muted-foreground">Risk: {portfolio.risk} | Expected Return: {portfolio.return}</p>
@@ -280,6 +259,7 @@ export default function InvestPage() {
                 </CardFooter>
               </Card>
 
+              {/* Investment Insights */}
               <Card className={`md:col-span-2 ${isInsightsExpanded ? 'row-span-2' : ''}`}>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -287,61 +267,28 @@ export default function InvestPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p>Your portfolio is outperforming the market by {investmentData.detailedAnalytics.marketOutperformance}%</p>
-                  <p>Diversification Score: {investmentData.detailedAnalytics.diversificationScore}/10</p>
-                  <p>Risk Assessment: {investmentData.detailedAnalytics.riskAssessment}</p>
+                  <p>Your portfolio is outperforming the market by 3.5%</p>
+                  <p>Diversification Score: 8.5/10</p>
+                  <p>Risk Assessment: Moderate</p>
 
                   {isInsightsExpanded && (
                     <div className="mt-4 space-y-4">
                       <div>
                         <h3 className="font-semibold mb-2">Sector Allocation</h3>
-                        {investmentData.detailedAnalytics.sectorAllocation.map((sector, index) => (
-                          <div key={index} className="flex justify-between items-center mb-1">
-                            <span>{sector.sector}</span>
-                            <span>{sector.percentage}%</span>
-                          </div>
-                        ))}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>Technology: 30%</div>
+                          <div>Finance: 25%</div>
+                          <div>Healthcare: 20%</div>
+                          <div>Consumer Goods: 15%</div>
+                          <div>Energy: 10%</div>
+                        </div>
                       </div>
 
                       <div>
-                        <h3 className="font-semibold mb-2">Monthly Returns</h3>
-                        <div className="flex justify-between">
-                          {investmentData.detailedAnalytics.monthlyReturns.map((month, index) => (
-                            <div key={index} className="text-center">
-                              <div className={`h-20 w-8 bg-primary-foreground relative`}>
-                                <div
-                                  className={`absolute bottom-0 left-0 right-0 bg-primary`}
-                                  style={{ height: `${Math.abs(month.return) * 5}%` }}
-                                ></div>
-                              </div>
-                              <div className="text-xs mt-1">{month.month}</div>
-                              <div className={`text-xs ${month.return >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                {month.return}%
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <h3 className="font-semibold mb-2">Top Performers</h3>
-                          {investmentData.detailedAnalytics.topPerformers.map((asset, index) => (
-                            <div key={index} className="flex justify-between">
-                              <span>{asset.asset}</span>
-                              <span className="text-green-500">+{asset.return}%</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold mb-2">Underperformers</h3>
-                          {investmentData.detailedAnalytics.underperformers.map((asset, index) => (
-                            <div key={index} className="flex justify-between">
-                              <span>{asset.asset}</span>
-                              <span className="text-red-500">{asset.return}%</span>
-                            </div>
-                          ))}
-                        </div>
+                        <h3 className="font-semibold mb-2">Top Performers</h3>
+                        <div>AAPL: +15.2%</div>
+                        <div>MSFT: +12.8%</div>
+                        <div>AMZN: +10.5%</div>
                       </div>
                     </div>
                   )}
@@ -365,70 +312,13 @@ export default function InvestPage() {
                 </CardFooter>
               </Card>
 
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <History className="mr-2" /> Recent Transactions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="py-2 px-4 text-left">Type</th>
-                          <th className="py-2 px-4 text-right">Amount</th>
-                          <th className="py-2 px-4 text-right">Date</th>
-                          <th className="py-2 px-4 text-right">Portfolio</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {investmentData.transactions.map((transaction, index) => (
-                          <tr key={index} className="border-b last:border-b-0">
-                            <td className="py-2 px-4">{transaction.type}</td>
-                            <td className="py-2 px-4 text-right">${transaction.amount}</td>
-                            <td className="py-2 px-4 text-right">{transaction.date}</td>
-                            <td className="py-2 px-4 text-right">{transaction.portfolio}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full">View All Transactions</Button>
-                </CardFooter>
-              </Card>
+              {/* Transaction History */}
+              <TransactionHistory account={account || ''} />
             </div>
-
-            {/* Error Dialogs */}
-            <Dialog open={isInvestErrorOpen} onOpenChange={setIsInvestErrorOpen}>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Error</DialogTitle>
-                  <DialogDescription>{investError}</DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button onClick={() => setIsInvestErrorOpen(false)}>Close</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog open={isWithdrawErrorOpen} onOpenChange={setIsWithdrawErrorOpen}>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Error</DialogTitle>
-                  <DialogDescription>{withdrawError}</DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button onClick={() => setIsWithdrawErrorOpen(false)}>Close</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
           </div>
         ) : (
           <>
+            {/* Section for users who are not signed in */}
             <motion.section 
               className="text-center mb-12"
               initial={{ opacity: 0, y: 20 }}
@@ -445,6 +335,7 @@ export default function InvestPage() {
               </SignInButton>
             </motion.section>
 
+            {/* Placeholder Section */}
             <motion.section 
               className="mb-12"
               initial={{ opacity: 0, y: 20 }}
@@ -486,6 +377,7 @@ export default function InvestPage() {
               </div>
             </motion.section>
 
+            {/* Investment Features Section */}
             <motion.section 
               className="mb-12"
               initial={{ opacity: 0, y: 20 }}
@@ -537,6 +429,7 @@ export default function InvestPage() {
               </div>
             </motion.section>
 
+            {/* Call to action for signing in */}
             <motion.section 
               className="mb-12"
               initial={{ opacity: 0, y: 20 }}
@@ -549,6 +442,7 @@ export default function InvestPage() {
                 borderRadius={16}
                 neonColors={{ firstColor: "#8B5CF6", secondColor: "#6366F1" }}
               >
+                
                 <div className="p-8">
                   <h3 className="text-2xl font-bold text-center mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 animate-pulse">
                     Start Your Investment Journey
