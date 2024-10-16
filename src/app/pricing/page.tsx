@@ -8,7 +8,7 @@ import { Progress } from "@/app/components/ui/progress";
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import { useUser, SignInButton } from '@clerk/nextjs';
-import { CreditCard, Calendar, AlertCircle, Download, Gift, Users, Check, Copy, Share2, Twitter, Facebook, Linkedin, ChevronDown } from 'lucide-react';
+import { CreditCard, Calendar, AlertCircle, Download, Gift, Users, Check, Copy, Share2, Twitter, Facebook, Linkedin, ChevronDown, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
 import { Input } from "@/app/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
@@ -17,6 +17,14 @@ import WordPullUp from "@/app/components/ui/word-pull-up";
 import { Switch } from "@/app/components/ui/switch";
 import { MagicCard } from "@/app/components/ui/magic-card";
 import ShimmerButton from "@/app/components/ui/shimmer-button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { ethers } from 'ethers';
+import { toast } from 'react-hot-toast';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
+import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
+import 'react-circular-progressbar/dist/styles.css';
+import AnimatedCircularProgressBar from "@/app/components/ui/animated-circular-progress-bar";
 
 const planData = [
   {
@@ -141,8 +149,8 @@ const tiers = [
     cta: 'Try for Free',
   },
   {
-    name: 'Pro',
-    price: 29.99,
+    name: 'Premium', // Changed from 'Pro' to 'Premium'
+    price: 3, // Changed from 29.99 to 3
     description: 'Ideal for users who are ready to make more informed financial decisions and actively grow their wealth through advanced tools and insights.',
     features: [
       'Advanced Investment Options',
@@ -158,7 +166,7 @@ const tiers = [
   },
   {
     name: 'Enterprise',
-    price: 99.99,
+    price: 7, // Changed from 99.99 to 7
     description: 'Designed for high-net-worth individuals or businesses looking for comprehensive financial management solutions.',
     features: [
       'Full Investment Suite',
@@ -174,6 +182,186 @@ const tiers = [
   },
 ];
 
+export function StakingRewardCalculator() {
+  const [protocol, setProtocol] = useState('');
+  const [amount, setAmount] = useState('');
+  const [duration, setDuration] = useState(1);
+  const [price, setPrice] = useState('');
+  const [rewardRate, setRewardRate] = useState('');
+  const [rewardsEarned, setRewardsEarned] = useState({ usd: 0, tokens: 0 });
+  const [chartData, setChartData] = useState([]);
+
+  const topTokens = [
+    { value: 'ETH', label: 'Ethereum' },
+    { value: 'BTC', label: 'Bitcoin' },
+    { value: 'SOL', label: 'Solana' },
+    { value: 'DOT', label: 'Polkadot' },
+    { value: 'ADA', label: 'Cardano' },
+    { value: 'AVAX', label: 'Avalanche' },
+    { value: 'MATIC', label: 'Polygon' },
+    { value: 'LUNA', label: 'Terra' },
+    { value: 'NEAR', label: 'NEAR Protocol' },
+    { value: 'ALGO', label: 'Algorand' },
+  ];
+
+  const stakingDurations = [
+    { value: 1, label: '1 Week' },
+    { value: 2, label: '2 Weeks' },
+    { value: 4, label: '4 Weeks' },
+    { value: 8, label: '8 Weeks' },
+    { value: 12, label: '12 Weeks' },
+    { value: 24, label: '24 Weeks' },
+    { value: 52, label: '52 Weeks' },
+  ];
+
+  const calculateRewards = () => {
+    // Calculate rewards earned and update chart data
+  };
+
+  const formatYAxis = (value: number) => {
+    return `$${value.toLocaleString('en-US')}`;
+  };
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="custom-tooltip">
+          <p className="label">{`Week ${label}`}</p>
+          <p className="intro">{`Total Balance: $${payload[0].value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
+          <p className="intro">{`Rewards: $${payload[1].value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <MagicCard 
+      className="bg-gradient-to-br from-purple-900 to-indigo-900 text-white p-2 overflow-y-auto max-h-[80vh]"
+      gradientColor="rgba(255, 255, 255, 0.1)"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div className="space-y-2">
+          {[
+            { title: "Enter Protocol", value: protocol, onChange: setProtocol, options: topTokens },
+            { title: "Amount of Tokens", value: amount, onChange: setAmount, suffix: protocol },
+            { title: "Staking Duration", value: duration.toString(), onChange: (value) => setDuration(Number(value)), options: stakingDurations },
+            { title: "Price", value: price, onChange: setPrice, suffix: "USD" },
+            { title: "Staking Rewards Rate", value: rewardRate, onChange: setRewardRate, suffix: "%" }
+          ].map((item, index) => (
+            <Card key={index} className="bg-white/10 backdrop-blur-sm border-white/20">
+              <CardHeader className="p-2">
+                <CardTitle className="text-white text-sm">{item.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-2">
+                {item.options ? (
+                  <Select value={item.value} onValueChange={item.onChange}>
+                    <SelectTrigger className="w-full bg-white/20 border-white/30 text-white">
+                      <SelectValue placeholder={`Select ${item.title.toLowerCase()}`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {item.options.map((option) => (
+                        <SelectItem key={option.value} value={option.value.toString()}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      value={item.value}
+                      onChange={(e) => item.onChange(e.target.value)}
+                      className="text-white bg-white/20 border-white/30 pr-12"
+                    />
+                    {item.suffix && (
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white text-sm">
+                        {item.suffix}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="space-y-2">
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+            <CardHeader className="p-2">
+              <CardTitle className="text-sm font-semibold text-white">Rewards Earned</CardTitle>
+              <p className="text-xs text-gray-300">Estimated earnings over {duration} weeks</p>
+            </CardHeader>
+            <CardContent className="p-2">
+              <div className="space-y-1">
+                <div>
+                  <p className="text-xs text-gray-300">In USD</p>
+                  <p className="text-lg font-bold text-green-400">
+                    ${rewardsEarned.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-300">In {protocol}</p>
+                  <p className="text-sm font-semibold text-purple-300">
+                    {rewardsEarned.tokens.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })} {protocol}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+            <CardHeader className="p-2">
+              <CardTitle className="text-white text-sm">Rewards Over Time</CardTitle>
+            </CardHeader>
+            <CardContent className="p-2">
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart 
+                    data={chartData} 
+                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis 
+                      dataKey="week" 
+                      stroke="white"
+                      tick={{fontSize: 10}}
+                    />
+                    <YAxis 
+                      stroke="white"
+                      tickFormatter={formatYAxis}
+                      tick={{fontSize: 10}}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="balance" 
+                      name="Total Balance" 
+                      stroke="#8B5CF6" 
+                      strokeWidth={2} 
+                      dot={false} 
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="reward" 
+                      name="Rewards" 
+                      stroke="#34D399" 
+                      strokeWidth={2} 
+                      dot={false} 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </MagicCard>
+  );
+}
+
 export default function PricingPage() {
   const { isSignedIn, user } = useUser();
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
@@ -181,6 +369,9 @@ export default function PricingPage() {
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
   const [newPaymentMethod, setNewPaymentMethod] = useState('credit_card');
   const [isAnnual, setIsAnnual] = useState(false);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState('');
 
   const referralLink = `https://blockholder.com/?ref=${user?.id}`;
 
@@ -213,10 +404,10 @@ export default function PricingPage() {
 
   // Mock data for the billing dashboard
   const billingData = {
-    currentPlan: "Pro",
+    currentPlan: "Premium", // Changed from "Pro" to "Premium"
     billingCycle: "Monthly",
     nextBillingDate: "2023-06-15",
-    cost: 29.99,
+    cost: 3, // Changed from 29.99 to 3
     status: "Active",
     features: [
       "Advanced Investment Options",
@@ -242,66 +433,220 @@ export default function PricingPage() {
 
   const handleAddPaymentMethod = () => {
     // Here you would typically integrate with a payment processor
-    // For now, we'll just close the modal
+    console.log(`Adding new payment method: ${newPaymentMethod}`);
     setIsAddPaymentOpen(false);
     // You might want to update the billingData state here to reflect the new payment method
   };
 
+  const handleUpgrade = async () => {
+    if (typeof window.ethereum !== 'undefined') {
+      try {
+        // Request account access
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+
+        // Define the upgrade costs (in ETH)
+        const upgradeCosts = {
+          basic: '0',
+          premium: '0.01',
+          enterprise: '0.05'
+        };
+
+        // Get the cost for the selected plan
+        const cost = upgradeCosts[selectedPlan];
+
+        // Create a transaction object
+        const transaction = {
+          to: '0xYourContractAddressHere', // Replace with your actual contract address
+          value: ethers.utils.parseEther(cost)
+        };
+
+        // Show a loading toast
+        const loadingToast = toast.loading('Confirming transaction...');
+
+        // Send the transaction
+        const tx = await signer.sendTransaction(transaction);
+        
+        // Wait for the transaction to be mined
+        await tx.wait();
+
+        // Close the loading toast and show a success message
+        toast.dismiss(loadingToast);
+        toast.success(`Successfully upgraded to ${selectedPlan} plan!`);
+
+        console.log(`Upgraded to ${selectedPlan} plan. Transaction hash: ${tx.hash}`);
+        
+        // Close the upgrade modal
+        setIsUpgradeModalOpen(false);
+        
+        // You might want to update the user's plan in your backend here
+      } catch (error) {
+        console.error('Error upgrading plan:', error);
+        toast.error('Failed to upgrade plan. Please try again.');
+        
+        // Close the upgrade modal even if there's an error
+        setIsUpgradeModalOpen(false);
+      }
+    } else {
+      console.error('Ethereum wallet is not connected');
+      toast.error('Ethereum wallet is not connected. Please connect your wallet and try again.');
+      
+      // Close the upgrade modal if the wallet is not connected
+      setIsUpgradeModalOpen(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900">
       <Header />
 
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto px-4 py-12">
         {isSignedIn ? (
-          <div>
-            <h1 className="text-4xl font-bold mb-6 text-center">Your Billing Dashboard</h1>
-            <p className="text-xl mb-8 text-center">Manage your subscription and billing information, {user.firstName}.</p>
+          <motion.div 
+            className="max-w-6xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <WordPullUp 
+              words="Your Billing Dashboard"
+              className="text-5xl font-bold mb-6 text-center text-white"
+            />
+            <p className="text-xl mb-12 text-center text-purple-200">Manage your subscription and billing information, {user.firstName}.</p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <CreditCard className="mr-2" /> Current Plan Overview
+              {/* Current Plan Overview Card */}
+              <MagicCard 
+                className="overflow-hidden backdrop-blur-lg bg-white/10"
+                gradientColor="rgba(139, 92, 246, 0.3)"
+              >
+                <CardHeader className="p-6">
+                  <CardTitle className="flex items-center text-2xl text-white">
+                    <Sparkles className="mr-2 text-yellow-400" /> Current Plan Overview
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold">{billingData.currentPlan} Plan</p>
-                  <p>Billing Cycle: {billingData.billingCycle}</p>
-                  <p>Next Billing Date: {billingData.nextBillingDate}</p>
-                  <p>Cost: ${billingData.cost} per {billingData.billingCycle.toLowerCase()}</p>
-                  <p className="text-green-500">Status: {billingData.status}</p>
+                <CardContent className="p-6">
+                  <p className="text-3xl font-bold text-purple-300 mb-4">{billingData.currentPlan} Plan</p>
+                  <div className="space-y-2 text-purple-100">
+                    <p>Billing Cycle: <span className="font-semibold">{billingData.billingCycle}</span></p>
+                    <p>Next Billing Date: <span className="font-semibold">{billingData.nextBillingDate}</span></p>
+                    <p>Cost: <span className="font-semibold">${billingData.cost} per {billingData.billingCycle.toLowerCase()}</span></p>
+                    <p className="text-green-400 font-semibold">Status: {billingData.status}</p>
+                  </div>
                 </CardContent>
-                <CardFooter>
-                  <Button className="w-full">Upgrade Plan</Button>
+                <CardFooter className="p-6">
+                  <Dialog open={isUpgradeModalOpen} onOpenChange={setIsUpgradeModalOpen}>
+                    <DialogTrigger asChild>
+                      <ShimmerButton
+                        className="w-full text-white font-semibold py-2 text-lg"
+                        background="linear-gradient(to right, #8B5CF6, #D946EF)"
+                        shimmerColor="rgba(255, 255, 255, 0.2)"
+                      >
+                        Upgrade Plan
+                      </ShimmerButton>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px] bg-transparent border-none shadow-none">
+                      <MagicCard 
+                        className="overflow-hidden backdrop-blur-lg bg-white/10 text-white"
+                        gradientColor="rgba(139, 92, 246, 0.3)"
+                      >
+                        <CardHeader className="p-6">
+                          <CardTitle className="text-2xl font-bold text-center">Upgrade Your Plan</CardTitle>
+                          <CardDescription className="text-center text-purple-200">
+                            Choose a plan that best fits your needs.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                          <RadioGroup value={selectedPlan} onValueChange={setSelectedPlan} className="space-y-4">
+                            {[
+                              { value: "basic", label: "Basic Plan", price: "Free" },
+                              { value: "premium", label: "Premium Plan", price: "$3/month" },
+                              { value: "enterprise", label: "Enterprise Plan", price: "$7/month" }
+                            ].map((plan) => (
+                              <div key={plan.value} className="flex items-center space-x-3 bg-white/5 p-4 rounded-lg transition-all duration-200 hover:bg-white/10">
+                                <RadioGroupItem value={plan.value} id={plan.value} className="border-purple-400 text-purple-400" />
+                                <Label htmlFor={plan.value} className="flex-grow font-semibold">{plan.label}</Label>
+                                <span className="text-purple-300">{plan.price}</span>
+                              </div>
+                            ))}
+                          </RadioGroup>
+                        </CardContent>
+                        <CardFooter className="p-6">
+                          <ShimmerButton
+                            onClick={handleUpgrade}
+                            className="w-full text-white font-semibold py-2 text-lg"
+                            background="linear-gradient(to right, #8B5CF6, #D946EF)"
+                            shimmerColor="rgba(255, 255, 255, 0.2)"
+                          >
+                            Confirm Upgrade
+                          </ShimmerButton>
+                        </CardFooter>
+                      </MagicCard>
+                    </DialogContent>
+                  </Dialog>
                 </CardFooter>
-              </Card>
+              </MagicCard>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
+              <MagicCard 
+                className="overflow-hidden backdrop-blur-lg bg-white/10"
+                gradientColor="rgba(139, 92, 246, 0.3)"
+              >
+                <CardHeader className="p-6">
+                  <CardTitle className="flex items-center text-2xl text-white">
                     <AlertCircle className="mr-2" /> Usage Limits
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  {Object.entries(billingData.usageLimits).map(([key, value]) => (
-                    <div key={key} className="mb-4">
-                      <p className="font-semibold capitalize">{key}</p>
-                      <Progress value={(value.used / value.limit) * 100} className="mt-2" />
-                      <p className="text-sm text-right mt-1">
-                        {value.used} / {value.limit} used
-                      </p>
-                    </div>
-                  ))}
+                <CardContent className="p-6 text-purple-100">
+                  <div className="grid grid-cols-2 gap-6">
+                    {Object.entries(billingData.usageLimits).map(([key, value]) => (
+                      <TooltipProvider key={key}>
+                        <UITooltip>
+                          <TooltipTrigger>
+                            <div className="flex flex-col items-center">
+                              <AnimatedCircularProgressBar
+                                max={value.limit}
+                                value={value.used}
+                                min={0}
+                                gaugePrimaryColor="rgba(139, 92, 246, 0.8)"
+                                gaugeSecondaryColor="rgba(255, 255, 255, 0.2)"
+                                className="mb-4"
+                              />
+                              <p className="font-semibold capitalize mb-2">{key}</p>
+                              <p className="text-sm">
+                                {value.used} / {value.limit} used
+                              </p>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{`${value.limit - value.used} ${key} remaining`}</p>
+                          </TooltipContent>
+                        </UITooltip>
+                      </TooltipProvider>
+                    ))}
+                  </div>
                 </CardContent>
-              </Card>
+                <CardFooter className="p-6">
+                  <ShimmerButton
+                    className="w-full text-white font-semibold py-2 text-lg"
+                    background="linear-gradient(to right, #8B5CF6, #D946EF)"
+                    shimmerColor="rgba(255, 255, 255, 0.2)"
+                  >
+                    Upgrade for Higher Limits
+                  </ShimmerButton>
+                </CardFooter>
+              </MagicCard>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
+              <MagicCard 
+                className="overflow-hidden backdrop-blur-lg bg-white/10"
+                gradientColor="rgba(139, 92, 246, 0.3)"
+              >
+                <CardHeader className="p-6">
+                  <CardTitle className="flex items-center text-2xl text-white">
                     <Calendar className="mr-2" /> Billing History
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6 text-purple-100">
                   {billingData.transactions.map((transaction, index) => (
                     <div key={index} className="flex justify-between items-center mb-2">
                       <span>{transaction.date}</span>
@@ -313,18 +658,21 @@ export default function PricingPage() {
                     </div>
                   ))}
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="p-6">
                   <Button variant="outline" className="w-full">View All Transactions</Button>
                 </CardFooter>
-              </Card>
+              </MagicCard>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
+              <MagicCard 
+                className="overflow-hidden backdrop-blur-lg bg-white/10"
+                gradientColor="rgba(139, 92, 246, 0.3)"
+              >
+                <CardHeader className="p-6">
+                  <CardTitle className="flex items-center text-2xl text-white">
                     <CreditCard className="mr-2" /> Payment Methods
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6 text-purple-100">
                   {billingData.paymentMethods.map((method, index) => (
                     <div key={index} className="flex justify-between items-center mb-2">
                       <span>{method.type} ending in {method.last4}</span>
@@ -332,15 +680,17 @@ export default function PricingPage() {
                     </div>
                   ))}
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="p-6">
                   <Dialog open={isAddPaymentOpen} onOpenChange={setIsAddPaymentOpen}>
                     <DialogTrigger asChild>
-                      <Button className="w-full">Add Payment Method</Button>
+                      <Button className="w-full bg-purple-900 hover:bg-purple-800 text-white">
+                        Add Payment Method
+                      </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent className="sm:max-w-[425px] bg-gray-800 text-white">
                       <DialogHeader>
-                        <DialogTitle>Add New Payment Method</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-2xl font-bold text-purple-300">Add New Payment Method</DialogTitle>
+                        <DialogDescription className="text-gray-300">
                           Choose a new payment method to add to your account.
                         </DialogDescription>
                       </DialogHeader>
@@ -348,42 +698,52 @@ export default function PricingPage() {
                         <RadioGroup value={newPaymentMethod} onValueChange={setNewPaymentMethod}>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="credit_card" id="credit_card" />
-                            <Label htmlFor="credit_card">Credit Card</Label>
+                            <Label htmlFor="credit_card" className="text-white">Credit/Debit Card</Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="paypal" id="paypal" />
-                            <Label htmlFor="paypal">PayPal</Label>
+                            <Label htmlFor="paypal" className="text-white">PayPal</Label>
                           </div>
                         </RadioGroup>
                         {newPaymentMethod === 'credit_card' && (
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Card Number" />
-                            <Input placeholder="MM/YY" />
-                            <Input placeholder="CVC" />
-                            <Input placeholder="Cardholder Name" />
+                            <Input placeholder="Card Number" className="col-span-2 bg-gray-700 text-white placeholder-gray-400" />
+                            <Input placeholder="MM/YY" className="bg-gray-700 text-white placeholder-gray-400" />
+                            <Input placeholder="CVC" className="bg-gray-700 text-white placeholder-gray-400" />
+                            <Input placeholder="Cardholder Name" className="col-span-2 bg-gray-700 text-white placeholder-gray-400" />
                           </div>
                         )}
                         {newPaymentMethod === 'paypal' && (
-                          <Button onClick={() => window.open('https://www.paypal.com', '_blank')}>
+                          <Button onClick={() => window.open('https://www.paypal.com', '_blank')} className="bg-blue-500 hover:bg-blue-600 text-white">
                             Connect PayPal Account
                           </Button>
                         )}
                       </div>
                       <DialogFooter>
-                        <Button onClick={handleAddPaymentMethod}>Add Payment Method</Button>
+                        <ShimmerButton
+                          onClick={handleAddPaymentMethod}
+                          className="w-full text-white font-semibold py-2 text-lg"
+                          background="linear-gradient(to right, #8B5CF6, #D946EF)"
+                          shimmerColor="rgba(255, 255, 255, 0.2)"
+                        >
+                          Add Payment Method
+                        </ShimmerButton>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
                 </CardFooter>
-              </Card>
+              </MagicCard>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
+              <MagicCard 
+                className="overflow-hidden backdrop-blur-lg bg-white/10"
+                gradientColor="rgba(139, 92, 246, 0.3)"
+              >
+                <CardHeader className="p-6">
+                  <CardTitle className="flex items-center text-2xl text-white">
                     <Gift className="mr-2" /> Promotional Discounts
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6 text-purple-100">
                   <p>Enter a promo code to apply a discount to your next bill.</p>
                   <input
                     type="text"
@@ -391,69 +751,80 @@ export default function PricingPage() {
                     className="w-full px-3 py-2 border rounded mt-2"
                   />
                 </CardContent>
-                <CardFooter>
-                  <Button className="w-full">Apply Promo Code</Button>
+                <CardFooter className="p-6">
+                  <Button className="w-full bg-purple-900 hover:bg-purple-800 text-white">Apply Promo Code</Button>
                 </CardFooter>
-              </Card>
+              </MagicCard>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
+              <MagicCard 
+                className="overflow-hidden backdrop-blur-lg bg-white/10"
+                gradientColor="rgba(139, 92, 246, 0.3)"
+              >
+                <CardHeader className="p-6">
+                  <CardTitle className="flex items-center text-2xl text-white">
                     <Users className="mr-2" /> Referral Program
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p>Users Referred: {billingData.referrals.count}</p>
-                  <p>Earnings: ${billingData.referrals.earnings}</p>
+                <CardContent className="p-6 text-purple-100">
+                  <p className="text-2xl font-bold mb-2">Earn Rewards</p>
+                  <p className="mb-4">Share BlockHolder and earn rewards for each referral.</p>
+                  <div className="space-y-2">
+                    <p>Users Referred: <span className="font-semibold">{billingData.referrals.count}</span></p>
+                    <p>Total Earnings: <span className="font-semibold">${billingData.referrals.earnings}</span></p>
+                  </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="p-6">
                   <Dialog open={isReferralModalOpen} onOpenChange={setIsReferralModalOpen}>
                     <DialogTrigger asChild>
-                      <Button>Share Referral Link</Button>
+                      <Button className="w-full bg-purple-900 hover:bg-purple-800 text-white">
+                        Share Referral Link
+                      </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent className="sm:max-w-[425px] bg-gray-800 text-white">
                       <DialogHeader>
-                        <DialogTitle>Share Your Referral Link</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-2xl font-bold text-purple-300">Share Your Referral Link</DialogTitle>
+                        <DialogDescription className="text-gray-300">
                           Copy your unique referral link or share it directly on social media.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
                         <div className="flex items-center gap-2">
-                          <Input value={referralLink} readOnly />
-                          <Button onClick={handleCopyLink} size="icon">
+                          <Input value={referralLink} readOnly className="bg-gray-700 text-white" />
+                          <Button onClick={handleCopyLink} size="icon" className="bg-purple-600 hover:bg-purple-700">
                             {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                           </Button>
                         </div>
                         <div className="flex justify-center gap-4">
-                          <Button onClick={() => handleShare('twitter')} variant="outline" className="flex items-center gap-2">
+                          <Button onClick={() => handleShare('twitter')} variant="outline" className="flex items-center gap-2 bg-blue-400 hover:bg-blue-500 text-white">
                             <Twitter className="h-4 w-4" />
                             Twitter
                           </Button>
-                          <Button onClick={() => handleShare('facebook')} variant="outline" className="flex items-center gap-2">
+                          <Button onClick={() => handleShare('facebook')} variant="outline" className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white">
                             <Facebook className="h-4 w-4" />
                             Facebook
                           </Button>
-                          <Button onClick={() => handleShare('linkedin')} variant="outline" className="flex items-center gap-2">
+                          <Button onClick={() => handleShare('linkedin')} variant="outline" className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white">
                             <Linkedin className="h-4 w-4" />
                             LinkedIn
                           </Button>
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button onClick={() => setIsReferralModalOpen(false)}>Close</Button>
+                        <Button onClick={() => setIsReferralModalOpen(false)} className="bg-gray-600 hover:bg-gray-700 text-white">
+                          Close
+                        </Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
                 </CardFooter>
-              </Card>
+              </MagicCard>
             </div>
 
-            <div className="mt-8 text-center">
-              <Button variant="outline" className="mr-4">Cancel Subscription</Button>
-              <Button variant="outline">Pause Subscription</Button>
+            <div className="mt-12 text-center">
+              <Button variant="outline" className="mr-4 bg-white/10 text-white hover:bg-white/20">Cancel Subscription</Button>
+              <Button variant="outline" className="bg-white/10 text-white hover:bg-white/20">Pause Subscription</Button>
             </div>
-          </div>
+          </motion.div>
         ) : (
           <>
             <motion.section 
@@ -532,7 +903,7 @@ export default function PricingPage() {
                       <CardFooter className="mt-auto">
                         <ShimmerButton
                           className="w-full text-white"
-                          background="linear-gradient(to bottom right, #4c1d95, #312e81)"
+                          background="linear-gradient(to bottom right, #4c1d95, #5b21b6)" // Dark purple gradient
                           shimmerColor="rgba(255, 255, 255, 0.2)"
                         >
                           {tier.cta}

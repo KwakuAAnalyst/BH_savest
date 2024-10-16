@@ -16,6 +16,8 @@ import { RainbowButton } from "@/app/components/ui/rainbow-button";
 import WordPullUp from "@/app/components/ui/word-pull-up";
 import { StakingRewardCalculator } from '@/app/components/StakingRewardCalculator';
 import { CompoundInterestCalculator } from '@/app/components/CompoundInterestCalculator';
+import Meteors from "@/app/components/ui/meteors";
+import { useRouter } from 'next/navigation';
 
 const DynamicLearningDashboard = dynamic(() => import('@/app/components/LearningDashboard'), {
   ssr: false,
@@ -24,15 +26,16 @@ const DynamicLearningDashboard = dynamic(() => import('@/app/components/Learning
 export default function LearnPage() {
   const { isSignedIn, user } = useUser();
   const [isClient, setIsClient] = useState(false);
-  const [selectedArticle, setSelectedArticle] = useState(null);
+  const [selectedArticle, setSelectedArticle] = useState<string | null>(null);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [isCompoundCalculatorOpen, setIsCompoundCalculatorOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  const getArticleContent = (title) => {
+  const getArticleContent = (title: string) => {
     switch (title) {
       case "Introduction to Effective Saving":
         return (
@@ -265,6 +268,10 @@ export default function LearnPage() {
     }
   };
 
+  const handleContinueLearning = () => {
+    router.push('/learn/introduction-to-defi');
+  };
+
   // Existing code for non-signed-in users
   const educationalContent = [
     {
@@ -380,19 +387,32 @@ export default function LearnPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 relative overflow-hidden">
+      <Meteors number={20} /> {/* Add Meteors component here */}
       <Header />
-
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto px-4 py-8 relative z-10"> {/* Add relative and z-10 to ensure content is above meteors */}
         {isSignedIn ? (
-          <DynamicLearningDashboard user={user} />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <WordPullUp 
+              words="Your Learning Dashboard"
+              className="text-4xl font-bold mb-6 text-center text-white"
+            />
+            <p className="text-xl mb-8 text-center text-purple-200">
+              Welcome to your personalized learning dashboard, {user.firstName}.
+            </p>
+            <DynamicLearningDashboard user={user} onContinueLearning={handleContinueLearning} />
+          </motion.div>
         ) : (
           <>
             <WordPullUp 
               words="Learn and Grow Your Financial Knowledge"
-              className="text-4xl font-bold mb-6 text-center"
+              className="text-4xl font-bold mb-6 text-center text-white"
             />
-            <p className="text-xl mb-8 text-center text-muted-foreground">Explore our educational resources to improve your financial literacy and make informed decisions.</p>
+            <p className="text-xl mb-8 text-center text-purple-200">Explore our educational resources to improve your financial literacy and make informed decisions.</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {educationalContent.map((section, index) => (
@@ -537,7 +557,6 @@ export default function LearnPage() {
           </>
         )}
       </main>
-
       <Footer />
     </div>
   );

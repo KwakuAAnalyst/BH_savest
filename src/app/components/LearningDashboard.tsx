@@ -34,8 +34,8 @@ export default function LearningDashboard({ user }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <h1 className="text-4xl font-bold mb-6">Learning Dashboard</h1>
-      <p className="text-xl mb-8 text-muted-foreground">Empower Your Financial Future with Knowledge</p>
+      <h1 className="text-4xl font-bold mb-2"></h1>
+      <p className="text-xl mb-8 text-muted-foreground"></p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Personalized Learning Path */}

@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Switch } from "@/app/components/ui/switch"
 import { useState } from "react"
 import ShimmerButton from "@/app/components/ui/shimmer-button"
+import { MagicCard } from "@/app/components/ui/magic-card"
 
 const tiers = [
   {
@@ -21,7 +22,7 @@ const tiers = [
   },
   {
     name: 'Premium',
-    price: 20,
+    price: 3,
     description: 'A premium plan for growing businesses',
     features: [
       'Advanced AI insights',
@@ -35,7 +36,7 @@ const tiers = [
   },
   {
     name: 'Enterprise',
-    price: 50,
+    price: 7,
     description: 'An enterprise plan with advanced features for large organizations',
     features: [
       'Custom AI solutions',
@@ -79,7 +80,11 @@ export default function PricingSection() {
         </div>
         <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {tiers.map((tier) => (
-            <Card key={tier.name} className={`flex flex-col ${tier.highlighted ? 'border-primary shadow-lg' : ''}`}>
+            <MagicCard 
+              key={tier.name} 
+              className={`flex flex-col ${tier.highlighted ? 'border-primary shadow-lg' : ''}`}
+              gradientColor="rgba(139, 92, 246, 0.3)" // Light purple color with low opacity
+            >
               <CardHeader>
                 <CardTitle className="text-xl font-semibold">{tier.name}</CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">{tier.description}</CardDescription>
@@ -105,13 +110,13 @@ export default function PricingSection() {
               <CardFooter className="mt-auto">
                 <ShimmerButton
                   className="w-full text-white"
-                  background="linear-gradient(to bottom right, #4c1d95, #312e81)" // Dark purple to indigo gradient
+                  background="linear-gradient(to bottom right, #4c1d95, #5b21b6)" // Dark purple gradient
                   shimmerColor="rgba(255, 255, 255, 0.2)"
                 >
                   {tier.cta}
                 </ShimmerButton>
               </CardFooter>
-            </Card>
+            </MagicCard>
           ))}
         </div>
       </div>
