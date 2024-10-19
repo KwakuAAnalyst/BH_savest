@@ -23,6 +23,8 @@ import { NeonGradientCard } from "@/app/components/ui/neon-gradient-card";
 import { RainbowButton } from "@/app/components/ui/rainbow-button";
 import TransactionHistory from '@/app/components/TransactionHistory'; // Importing TransactionHistory component
 
+
+// BHC contract address= 0x672aac1fee4241d2e186cbc3c740c3634214d833
 const contractAddress = "0x42a0bd840bc220e64bb4a1710bafb4e1340e3829"; // Your contract address
 const contractABI = EthStaking;
 
