@@ -404,7 +404,7 @@ export default function LearnPage() {
             <p className="text-xl mb-8 text-center text-purple-200">
               Welcome to your personalized learning dashboard, {user.firstName}.
             </p>
-            <DynamicLearningDashboard user={user} onContinueLearning={handleContinueLearning} />
+            <DynamicLearningDashboard user={user} />
           </motion.div>
         ) : (
           <>

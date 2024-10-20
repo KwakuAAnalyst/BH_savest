@@ -64,7 +64,11 @@ export function StakingRewardCalculator() {
     setChartData(newChartData);
   };
 
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomTooltip = ({ active, payload, label }: {
+    active?: boolean;
+    payload?: Array<{ value: number }>;
+    label?: string;
+  }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-4 rounded-lg shadow-lg">

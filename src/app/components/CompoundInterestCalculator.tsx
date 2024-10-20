@@ -63,7 +63,13 @@ export function CompoundInterestCalculator() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   };
 
-  const CustomTooltip = ({ active, payload, label }) => {
+  interface CustomTooltipProps {
+    active?: boolean;
+    payload?: Array<{ value: number }>;
+    label?: string;
+  }
+
+  const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-4 rounded-lg shadow-lg">
@@ -129,25 +135,33 @@ export function CompoundInterestCalculator() {
                 </div>
                 <div>
                   <label className="text-sm text-gray-300">Years of growth</label>
-                  <Input
-                    type="text"
-                    value={yearsOfGrowth}
-                    onChange={(e) => setYearsOfGrowth(e.target.value)}
-                    className="text-white bg-white/20 border-white/30"
-                    suffix="Years"
-                  />
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      value={yearsOfGrowth}
+                      onChange={(e) => setYearsOfGrowth(e.target.value)}
+                      className="text-white bg-white/20 border-white/30 pr-16"
+                    />
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white">
+                      Years
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm text-gray-300">Estimated rate of return</label>
-                  <Input
-                    type="text"
-                    value={estimatedReturn}
-                    onChange={(e) => setEstimatedReturn(e.target.value)}
-                    className="text-white bg-white/20 border-white/30"
-                    suffix="%"
-                  />
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      value={estimatedReturn}
+                      onChange={(e) => setEstimatedReturn(e.target.value)}
+                      className="text-white bg-white/20 border-white/30 pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white">
+                      %
+                    </span>
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm text-gray-300">Compound frequency</label>
