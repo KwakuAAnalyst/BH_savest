@@ -1,6 +1,7 @@
 <div align="center">
   <img src="https://github.com/eben619/Celo_Africa_Dao-Ghana_University_Tour/blob/main/celo_isotype.svg" alt="BlockHolder" width="150px">
 </div>
+
 # BlockHolder Save
 
 BlockHolder Save is a savings and investment tracking application that leverages blockchain technology to offer users secure and optimized investment strategies. The project integrates both Web2 and Web3 technologies, providing seamless user experiences through wallets, transactions, and real-time data updates.
