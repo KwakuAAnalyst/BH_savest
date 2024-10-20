@@ -20,6 +20,7 @@ import ShimmerButton from "@/app/components/ui/shimmer-button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { ethers } from 'ethers';
+import { utils, providers } from 'ethers';
 import { toast } from 'react-hot-toast';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
