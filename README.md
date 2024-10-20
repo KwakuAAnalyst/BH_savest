@@ -46,23 +46,21 @@ To run this project locally, follow these steps:
 
 3. **Create environment variables:**
    Create a `.env.local` file in the root directory with the following variables:
-   ```bash
    
+```
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY= ""
 CLERK_SECRET_KEY=""
 NEXT_PUBLIC_BASE_SCAN_API_KEY=""
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=""
-
-   ```
+```
 
 4. **Run the application:**
 
-
-   ```bash
+   ```
    yarn run dev
    ```
 or
-   ```bash
+   ```
    yarn start
    ```
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
