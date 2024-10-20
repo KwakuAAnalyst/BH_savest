@@ -6,6 +6,10 @@
 
 BlockHolder Save is a savings and investment tracking application that leverages blockchain technology to offer users secure and optimized investment strategies. The project integrates both Web2 and Web3 technologies, providing seamless user experiences through wallets, transactions, and real-time data updates.
 
+**Visit The DApp*** : https://bh-dapp.vercel.app/
+
+Switch your wallet network to base sepolia, in order to use.
+
 ## Table of Contents
 - [Features](#features)
 - [Technologies](#technologies)
