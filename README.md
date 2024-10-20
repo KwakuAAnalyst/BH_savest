@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/KwakuAAnalyst/BH_savest/blob/main/photo.jpg" alt="BlockHolder" width="150px">
+  <img src="https://github.com/KwakuAAnalyst/BH_savest/blob/main/photo.jpg" alt="BlockHolder" width="200px">
 </div>
 
 # BlockHolder Save
