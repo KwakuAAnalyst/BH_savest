@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/eben619/Celo_Africa_Dao-Ghana_University_Tour/blob/main/celo_isotype.svg" alt="BlockHolder" width="150px">
+  <img src="https://github.com/KwakuAAnalyst/BH_savest/blob/main/photo.jpg" alt="BlockHolder" width="150px">
 </div>
 
 # BlockHolder Save
