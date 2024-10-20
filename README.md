@@ -27,6 +27,12 @@ This project was built using the following technologies:
 - **Ethers.js** - Ethereum wallet and blockchain interaction library.
 - **Tailwind CSS** - Utility-first CSS framework for styling.
 - **Clerk** - For authentication and real-time database functionalities.
+  
+**Contract Addresses** 
+- BlockHolderCoin contract address= 0x672aac1fee4241d2e186cbc3c740c3634214d833
+- Staking Contract address= 0x42a0bd840bc220e64bb4a1710bafb4e1340e3829
+- Investment Contract Address= 0xcfa367406ad0abb67411f7b72b86863f4949dc15
+- Saving Contract Address= 0x035d1c84106b51c8094697e8d3b26c5df9937ad2
 
 ## Setup Instructions
 
