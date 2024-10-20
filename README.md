@@ -1,7 +1,7 @@
 
 # BlockHolder Save
 
-BH Savest is a savings and investment tracking application that leverages blockchain technology to offer users secure and optimized investment strategies. The project integrates both Web2 and Web3 technologies, providing seamless user experiences through wallets, transactions, and real-time data updates.
+BlockHolder Save is a savings and investment tracking application that leverages blockchain technology to offer users secure and optimized investment strategies. The project integrates both Web2 and Web3 technologies, providing seamless user experiences through wallets, transactions, and real-time data updates.
 
 ## Table of Contents
 - [Features](#features)
@@ -86,7 +86,7 @@ BH_savest/
 │   ├── services/            # External service integrations
 │   └── utils/               # Utility functions
 ├── public/                  # Static assets
-├── .env                     # Environment variables file
+├── .env.local                     # Environment variables file
 ├── package.json             # Node.js package file
 ├── yarn.lock                # Yarn lock file
 └── README.md                # Project documentation
