@@ -79,8 +79,8 @@ export default function PricingPage() {
   };
 
   const billingHistory = [
-    { date: 'Jul 1, 2023', plan: 'Premium', amount: '$3.00', status: 'Paid' },
-    { date: 'Jun 1, 2023', plan: 'Premium', amount: '$3.00', status: 'Paid' },
+    { date: 'Jul 1, 2024', plan: 'Premium', amount: '$30.00', status: 'Paid' },
+    { date: 'Jun 1, 2023', plan: 'Premium', amount: '$30.00', status: 'Paid' },
     { date: 'May 1, 2023', plan: 'Basic', amount: 'Free', status: 'N/A' },
   ];
 
@@ -140,32 +140,32 @@ export default function PricingPage() {
             {isSignedIn ? (
               <>
                 <motion.div 
-                  className="grid gap-8 md:grid-cols-2 lg:grid-cols-3"
+                  className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.3 }}
                 >
-                  <MagicCard className="p-6 bg-white shadow-lg rounded-lg border border-gray-200" gradientColor="rgba(124, 58, 237, 0.1)">
+                  <MagicCard className="p-6 bg-white shadow-lg rounded-lg border border-gray-200 flex flex-col items-center" gradientColor="rgba(124, 58, 237, 0.1)">
                     <h3 className="text-xl font-semibold mb-4 text-gray-900 flex items-center">
                       <Zap className="mr-2 text-purple-600" /> Current Plan
                     </h3>
-                    <div className="text-gray-700">
+                    <div className="text-gray-700 text-center flex-grow">
                       <p className="text-2xl font-bold text-purple-600">Premium Plan</p>
-                      <p className="text-sm text-gray-500">Next billing: July 1, 2023</p>
+                      <p className="text-sm text-gray-500">Next billing: July 1, 2025</p>
                     </div>
                     <Button className="mt-6 w-full bg-purple-600 text-white hover:bg-purple-700" onClick={() => setIsChangePlanModalOpen(true)}>Change Plan</Button>
                   </MagicCard>
 
-                  <MagicCard className="p-6 bg-white shadow-lg rounded-lg border border-gray-200" gradientColor="rgba(124, 58, 237, 0.1)">
+                  <MagicCard className="p-6 bg-white shadow-lg rounded-lg border border-gray-200 flex flex-col items-center" gradientColor="rgba(124, 58, 237, 0.1)">
                     <h3 className="text-xl font-semibold mb-4 text-gray-900 flex items-center">
                       <CreditCard className="mr-2 text-purple-600" /> Payment Method
                     </h3>
-                    <div className="flex items-center justify-between text-gray-700 mb-4">
-                      <div className="flex items-center">
+                    <div className="text-gray-700 text-center flex-grow">
+                      <div className="flex items-center justify-center mb-4">
                         <CreditCard className="mr-2 text-gray-400" />
                         <span>•••• •••• •••• 1234</span>
                       </div>
-                      <Button variant="outline" size="sm" className="text-purple-600 border-purple-600 hover:bg-purple-50">Edit</Button>
+                      <Button variant="outline" size="sm" className="text-purple-600 border-purple-600 hover:bg-purple-50 px-4 mb-6">Edit</Button>
                     </div>
                     <Button 
                       className="w-full bg-purple-600 text-white hover:bg-purple-700"
@@ -175,11 +175,11 @@ export default function PricingPage() {
                     </Button>
                   </MagicCard>
 
-                  <MagicCard className="p-6 bg-white shadow-lg rounded-lg border border-gray-200" gradientColor="rgba(124, 58, 237, 0.1)">
+                  <MagicCard className="p-6 bg-white shadow-lg rounded-lg border border-gray-200 flex flex-col items-center" gradientColor="rgba(124, 58, 237, 0.1)">
                     <h3 className="text-xl font-semibold mb-4 text-gray-900 flex items-center">
                       <Clock className="mr-2 text-purple-600" /> Usage Limits
                     </h3>
-                    <div className="flex justify-around items-center mt-6">
+                    <div className="flex justify-around items-center mt-6 flex-grow">
                       <div className="text-center">
                         <AnimatedCircularProgressBar
                           max={100}
@@ -211,119 +211,105 @@ export default function PricingPage() {
                     </Button>
                   </MagicCard>
 
-                  <MagicCard className="p-6 bg-white shadow-lg rounded-lg border border-gray-200 col-span-full" gradientColor="rgba(124, 58, 237, 0.1)">
-                    <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-2xl font-semibold text-gray-900 flex items-center">
-                        <DollarSign className="mr-2 text-purple-600" /> Billing History
-                      </h3>
-                      <Button variant="outline" className="text-purple-600 border-purple-600 hover:bg-purple-50">
-                        View All <ChevronRight className="ml-1 h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="overflow-x-auto">
+                  <MagicCard className="p-6 bg-white shadow-lg rounded-lg border border-gray-200 flex flex-col items-center" gradientColor="rgba(124, 58, 237, 0.1)">
+                    <h3 className="text-xl font-semibold mb-4 text-gray-900 flex items-center">
+                      <DollarSign className="mr-2 text-purple-600" /> Billing History
+                    </h3>
+                    <div className="overflow-y-auto max-h-48 w-full flex-grow">
                       <table className="w-full text-gray-700">
                         <thead>
                           <tr className="text-left border-b border-gray-200">
                             <th className="pb-3 font-semibold text-gray-600">Date</th>
-                            <th className="pb-3 font-semibold text-gray-600">Plan</th>
                             <th className="pb-3 font-semibold text-gray-600">Amount</th>
-                            <th className="pb-3 font-semibold text-gray-600">Status</th>
                           </tr>
                         </thead>
                         <tbody>
                           {billingHistory.map((item, index) => (
-                            <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                              <td className="py-4">{item.date}</td>
-                              <td className="py-4">
-                                <span className="font-medium">{item.plan}</span>
-                              </td>
-                              <td className="py-4">{item.amount}</td>
-                              <td className="py-4">
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  item.status === 'Paid' 
-                                    ? 'bg-green-100 text-green-800' 
-                                    : 'bg-gray-100 text-gray-800'
-                                }`}>
-                                  {item.status}
-                                </span>
-                              </td>
+                            <tr key={index} className="border-b border-gray-100">
+                              <td className="py-2">{item.date}</td>
+                              <td className="py-2">{item.amount}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
+                    <Button variant="outline" className="mt-4 w-full text-purple-600 border-purple-600 hover:bg-purple-50">
+                      View All <ChevronRight className="ml-1 h-4 w-4" />
+                    </Button>
                   </MagicCard>
 
-                  <MagicCard className="p-6 bg-white shadow-lg rounded-lg border border-gray-200" gradientColor="rgba(124, 58, 237, 0.1)">
+                  <MagicCard className="p-6 bg-white shadow-lg rounded-lg border border-gray-200 flex flex-col items-center" gradientColor="rgba(124, 58, 237, 0.1)">
                     <h3 className="text-xl font-semibold mb-4 text-gray-900 flex items-center">
                       <Gift className="mr-2 text-purple-600" /> Promotional Code
                     </h3>
-                    <Input
-                      type="text"
-                      placeholder="Enter promo code"
-                      value={promoCode}
-                      onChange={(e) => setPromoCode(e.target.value)}
-                      className="mb-4 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                    />
+                    <div className="w-full flex-grow">
+                      <Input
+                        type="text"
+                        placeholder="Enter promo code"
+                        value={promoCode}
+                        onChange={(e) => setPromoCode(e.target.value)}
+                        className="mb-4 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                      />
+                    </div>
                     <Button className="w-full bg-purple-600 text-white hover:bg-purple-700">Apply Code</Button>
                   </MagicCard>
 
-                  <MagicCard className="p-6 bg-white shadow-lg rounded-lg border border-gray-200" gradientColor="rgba(124, 58, 237, 0.1)">
+                  <MagicCard className="p-6 bg-white shadow-lg rounded-lg border border-gray-200 flex flex-col items-center" gradientColor="rgba(124, 58, 237, 0.1)">
                     <h3 className="text-xl font-semibold mb-4 text-gray-900 flex items-center">
                       <Users className="mr-2 text-purple-600" /> Referral Program
                     </h3>
-                    {referralLink ? (
-                      <div>
-                        <p className="mb-2 text-gray-700">Share Blockholder with your friends:</p>
-                        <div className="flex mb-4">
-                          <Input 
-                            type="text" 
-                            value={referralLink} 
-                            readOnly 
-                            className="flex-grow bg-gray-50 border-gray-300 rounded-r-none" 
-                          />
-                          <Button 
-                            onClick={copyReferralLink} 
-                            className="bg-purple-600 text-white hover:bg-purple-700 rounded-l-none"
-                            title="Copy to clipboard"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
+                    <div className="w-full flex-grow">
+                      {referralLink ? (
+                        <div className="text-center">
+                          <p className="mb-2 text-gray-700">Share your referral link:</p>
+                          <div className="flex mb-4">
+                            <Input 
+                              type="text" 
+                              value={referralLink} 
+                              readOnly 
+                              className="flex-grow bg-gray-50 border-gray-300 rounded-r-none" 
+                            />
+                            <Button 
+                              onClick={copyReferralLink} 
+                              className="bg-purple-600 text-white hover:bg-purple-700 rounded-l-none"
+                              title="Copy to clipboard"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="flex space-x-2 justify-center">
+                            <Button
+                              onClick={() => shareToSocial('twitter')}
+                              className="bg-blue-400 hover:bg-blue-500 text-white"
+                              title="Share on Twitter"
+                            >
+                              <Twitter className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              onClick={() => shareToSocial('facebook')}
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                              title="Share on Facebook"
+                            >
+                              <Facebook className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              onClick={() => shareToSocial('linkedin')}
+                              className="bg-blue-700 hover:bg-blue-800 text-white"
+                              title="Share on LinkedIn"
+                            >
+                              <Linkedin className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <p className="mb-2 text-gray-700">Or share directly on social media:</p>
-                        <div className="flex space-x-2">
-                          <Button
-                            onClick={() => shareToSocial('twitter')}
-                            className="bg-blue-400 hover:bg-blue-500 text-white"
-                            title="Share on Twitter"
-                          >
-                            <Twitter className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            onClick={() => shareToSocial('facebook')}
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
-                            title="Share on Facebook"
-                          >
-                            <Facebook className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            onClick={() => shareToSocial('linkedin')}
-                            className="bg-blue-700 hover:bg-blue-800 text-white"
-                            title="Share on LinkedIn"
-                          >
-                            <Linkedin className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <Button className="w-full bg-purple-600 text-white hover:bg-purple-700" onClick={generateReferralLink}>
-                        Generate Referral Link
-                      </Button>
-                    )}
+                      ) : (
+                        <Button className="w-full bg-purple-600 text-white hover:bg-purple-700" onClick={generateReferralLink}>
+                          Generate Referral Link
+                        </Button>
+                      )}
+                    </div>
                   </MagicCard>
                 </motion.div>
 
-                {/* Add this new section for the cancel subscription button */}
                 <div className="mt-12 text-center">
                   <Button
                     variant="outline"
